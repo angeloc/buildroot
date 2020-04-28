@@ -38,6 +38,9 @@ define HOST_ENVIRONMENT_SETUP_INSTALL_CMDS
 	$(if $(BR2_LINUX_KERNEL),\
 		printf "export \"KERNELDIR=$(LINUX_BUILDDIR)\"\n" \
 			>> $(ENVIRONMENT_SETUP_FILE),)
+	$(if $(BR2_PACKAGE_HOST_ENVIRONMENT_SETUP_PS1),\
+		printf "PS1=\"\[\e[32m\]buildroot-$(BR2_VERSION)\[\e[m\]:\[\e[34m\]\w\[\e[m\]\$$ \"\n" \
+		>> $(ENVIRONMENT_SETUP_FILE),)
 endef
 
 $(eval $(host-generic-package))

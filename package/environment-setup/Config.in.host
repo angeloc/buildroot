@@ -4,3 +4,13 @@ config BR2_PACKAGE_HOST_ENVIRONMENT_SETUP
 	  Install an helper script to setup a build environment
 	  based on buildroot. It's useful when you export an sdk
 	  and want to use buildroot to build an external project
+
+if BR2_PACKAGE_HOST_ENVIRONMENT_SETUP
+
+config BR2_PACKAGE_HOST_ENVIRONMENT_SETUP_PS1
+	bool "export custom PS1"
+	help
+	  Whan sourced, the script will replace the PS1 with a
+	  custom one reporting SDK version in use.
+
+endif
