@@ -11,6 +11,7 @@ Some tips:
 * PATH is now pointing to the HOST_DIR path
 * Target configure options are already exported
 * To configure do "./configure $CONFIGURE_FLAGS"
+* Alternatively use the alias "configure"
 
 EOF
 SDK_PATH=$(dirname $(realpath "${BASH_SOURCE[0]}"))

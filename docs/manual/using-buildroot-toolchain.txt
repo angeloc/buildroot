@@ -32,8 +32,8 @@ BR2_PACKAGE_HOST_ENVIRONMENT_SETUP, you can have a +setup-environment+ script
 installed in +output/host/+.
 This script can be sourced with +. your/sdk/path/environment-setup+ to launch
 the buildroot shell. Inside this shell, you will find an environment already
-set up with the correct PATH and the complete list of +target configure
-options+.
+set up with the correct PATH, the complete list of +target configure
+options+ and some useful commands.
 
 Alternatively, if you just want to prepare the SDK without generating
 the tarball (e.g. because you will just be moving the +host+ directory,
