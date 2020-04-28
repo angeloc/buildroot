@@ -27,6 +27,14 @@ Upon extracting the SDK tarball, the user must run the script
 +relocate-sdk.sh+ (located at the top directory of the SDK), to make
 sure all paths are updated with the new location.
 
+For your convenience, by selecting the host package
+BR2_PACKAGE_HOST_ENVIRONMENT_SETUP, you can have a +setup-environment+ script
+installed in +output/host/+.
+This script can be sourced with +. your/sdk/path/environment-setup+ to launch
+the buildroot shell. Inside this shell, you will find an environment already
+set up with the correct PATH and the complete list of +target configure
+options+.
+
 Alternatively, if you just want to prepare the SDK without generating
 the tarball (e.g. because you will just be moving the +host+ directory,
 or will be generating the tarball on your own), Buildroot also allows
