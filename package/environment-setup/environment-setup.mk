@@ -24,6 +24,9 @@ define HOST_ENVIRONMENT_SETUP_INSTALL_CMDS
 		--program-prefix=\"\n" >> $(ENVIRONMENT_SETUP_FILE)
 	printf "alias configure=\"./configure \$${CONFIGURE_FLAGS}\"\n" \
 		>> $(ENVIRONMENT_SETUP_FILE)
+	printf "alias cmake=\"cmake \
+		-DCMAKE_TOOLCHAIN_FILE=$(HOST_DIR)/share/buildroot/toolchainfile.cmake \
+		-DCMAKE_INSTALL_PREFIX=/usr\"\n" >> $(ENVIRONMENT_SETUP_FILE)
 	$(SED) $(ENVIRONMENT_SETUP_HOST_BIN_DIR_SED_EXP) \
 		-e $(ENVIRONMENT_SETUP_HOST_DIR_SED_EXP) \
 		-e '/^export "PATH=/c\' \
