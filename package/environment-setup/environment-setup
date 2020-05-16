@@ -13,6 +13,7 @@ Some tips:
 * To configure do "./configure $CONFIGURE_FLAGS"
 * Alternatively use the alias "configure"
 * A "cmake" alias is available
+* ARCH and CROSS_COMPILE are already exported
 
 EOF
 SDK_PATH=$(dirname $(realpath "${BASH_SOURCE[0]}"))
