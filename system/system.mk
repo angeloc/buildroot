@@ -96,6 +96,18 @@ define SYSTEM_REMOUNT_ROOT_INITTAB
 endef
 endif
 
+ifeq ($(BR2_ENABLE_OVERLAYFS),y)
+define SYSTEM_OVERLAY_DIRS_INITTAB
+	grep $(BR2_OVERLAYFS_DATA_PARTITION) $(TARGET_DIR)/etc/fstab || \
+		printf "$(BR2_OVERLAYFS_DATA_PARTITION)\t/data\t\text4\trw\t0\t0\n" \
+			>> $(TARGET_DIR)/etc/fstab;
+	$(foreach d,$(BR2_OVERLAYFS_DIRS), \
+		grep -e "overlay.*$(d)" $(TARGET_DIR)/etc/fstab || \
+		printf "overlay\t$(d)\toverlay\tdefaults,lowerdir=$(d),upperdir=/data$(d),workdir=/data/work$(d)\n" \
+			>> $(TARGET_DIR)/etc/fstab;)
+endef
+endif
+
 ifeq ($(BR_BUILDING)$(BR2_SYSTEM_DEFAULT_PATH),y"")
 $(error BR2_SYSTEM_DEFAULT_PATH can't be empty)
 endif

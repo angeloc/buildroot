@@ -1,0 +1,32 @@
+#!/bin/sh
+
+start() {
+	printf 'Starting overlayfs: '
+	for mountpoint in $(grep overlay /etc/fstab | cut -f4 | cut -d"," -f3 | cut -d"=" -f2); do
+		test -d "$mountpoint" || \
+			{ mkdir -p $(grep overlay /etc/fstab | cut -f4 | cut -d"," -f4 | cut -d"=" -f2) && \
+				mkdir -p "$mountpoint" && mount $(grep "$mountpoint" /etc/fstab | cut -f2); } || \
+				{ echo "FAIL"; return 1; };
+	done
+	echo "OK"
+}
+
+stop() {
+	printf 'Stopping overlayfs: OK'
+}
+
+restart() {
+	start
+}
+
+case "$1" in
+	start|stop|restart)
+		"$1";;
+	reload)
+		# Restart, since there is no true "reload" feature (does not
+		# reconfigure/restart on SIGHUP, just closes all open files).
+		restart;;
+	*)
+		echo "Usage: $0 {start|stop|restart|reload}"
+		exit 1
+esac

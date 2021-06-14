@@ -388,6 +388,30 @@ config BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW
 	  remain read-only.
 	  If unsure, say Y.
 
+config BR2_ENABLE_OVERLAYFS
+	bool "Enable overlayfs read-write mechanism"
+	default n
+	depends on !BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW
+	select BR2_PACKAGE_OVERLAYFS
+	help
+	  Enable the overlayfs mechanism to make some directories read-write.
+
+config BR2_OVERLAYFS_DIRS
+	string "Enable overlayfs to selected directories"
+	default ""
+	depends on BR2_ENABLE_OVERLAYFS
+	help
+	  Path selected in this option will be mounted through an overlayfs
+	  to be read-write.
+
+config BR2_OVERLAYFS_DATA_PARTITION
+	string "Select data partition to handle overlay persitency"
+	default ""
+	depends on BR2_ENABLE_OVERLAYFS
+	help
+	  Device selected in this will be mounted in /data to handle overlayfs
+	  persistency.
+
 config BR2_SYSTEM_DHCP
 	string "Network interface to configure through DHCP"
 	default ""
