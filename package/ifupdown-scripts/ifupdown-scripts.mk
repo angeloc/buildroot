@@ -28,6 +28,8 @@ define IFUPDOWN_SCRIPTS_DHCP
 		echo "  pre-up /etc/network/nfs_check"; \
 		echo "  wait-delay 15"; \
 		echo "  hostname \$$(hostname)"; \
+		test -n "$(BR2_SYSTEM_CONNECT_WIFI)" && \
+			echo "  wpa-conf /etc/wpa_supplicant.conf" || true; \
 	) >> $(TARGET_DIR)/etc/network/interfaces
 endef
 define IFUPDOWN_SCRIPTS_DHCP_OPENRC
