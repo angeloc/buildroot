@@ -266,6 +266,19 @@ define WPA_SUPPLICANT_INSTALL_IFUP_SCRIPTS
 endef
 endif
 
+ifeq ($(BR2_SYSTEM_CONNECT_WIFI),y)
+define WPA_SUPPLICANT_ENABLE_WIFI
+	$(SED) '/network={/,/}/d' $(TARGET_DIR)/etc/wpa_supplicant.conf; \
+	(	echo "network={"; \
+		echo "  scan_ssid=1"; \
+		echo "  key_mgmt=WPA-PSK"; \
+		echo "  ssid=\"$(BR2_SYSTEM_CONNECT_WIFI_SSID)\""; \
+		echo "  psk=\"$(BR2_SYSTEM_CONNECT_WIFI_PASSWORD)\""; \
+		echo "}"; \
+	) >> $(TARGET_DIR)/etc/wpa_supplicant.conf
+endef
+endif
+
 define WPA_SUPPLICANT_INSTALL_TARGET_CMDS
 	$(INSTALL) -m 0755 -D $(@D)/$(WPA_SUPPLICANT_SUBDIR)/wpa_supplicant \
 		$(TARGET_DIR)/usr/sbin/wpa_supplicant
@@ -277,6 +290,7 @@ define WPA_SUPPLICANT_INSTALL_TARGET_CMDS
 	$(WPA_SUPPLICANT_INSTALL_WPA_CLIENT_SO)
 	$(WPA_SUPPLICANT_INSTALL_IFUP_SCRIPTS)
 	$(WPA_SUPPLICANT_ENABLE_CTRL_IFACE)
+	$(WPA_SUPPLICANT_ENABLE_WIFI)
 endef
 
 define WPA_SUPPLICANT_INSTALL_INIT_SYSTEMD
