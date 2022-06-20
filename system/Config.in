@@ -418,6 +418,21 @@ comment "automatic network configuration via DHCP needs ifupdown or busybox or n
 	depends on !(BR2_PACKAGE_BUSYBOX || BR2_PACKAGE_IFUPDOWN || \
 		BR2_PACKAGE_SYSTEMD_NETWORKD || BR2_PACKAGE_NETIFRC)
 
+config BR2_SYSTEM_CONNECT_WIFI
+	bool "Connect to a default wifi access point"
+	default n
+	depends on BR2_PACKAGE_WPA_SUPPLICANT
+
+config BR2_SYSTEM_CONNECT_WIFI_SSID
+	string "Access point SSID"
+	default ""
+	depends on BR2_SYSTEM_CONNECT_WIFI
+
+config BR2_SYSTEM_CONNECT_WIFI_PASSWORD
+	string "Access point password"
+	default ""
+	depends on BR2_SYSTEM_CONNECT_WIFI
+
 endif # BR2_ROOTFS_SKELETON_DEFAULT
 
 config BR2_SYSTEM_DEFAULT_PATH
