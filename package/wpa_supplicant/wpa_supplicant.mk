@@ -277,6 +277,15 @@ define WPA_SUPPLICANT_ENABLE_WIFI
 		echo "}"; \
 	) >> $(TARGET_DIR)/etc/wpa_supplicant.conf
 endef
+define WPA_SUPPLICANT_WIFI_INSTALL_INIT_SYSTEMD
+	$(INSTALL) -m 0755 -d $(TARGET_DIR)/etc/wpa_supplicant/
+	ln -sf ../wpa_supplicant.conf \
+		$(TARGET_DIR)/etc/wpa_supplicant/wpa_supplicant-$(BR2_SYSTEM_DHCP).conf
+endef
+define WPA_SUPPLICANT_WIFI_INSTALL_INIT_SYSTEMD_PRESET
+	$(HOST_DIR)/bin/systemctl --root=$(TARGET_DIR) preset wpa_supplicant\@$(BR2_SYSTEM_DHCP).service
+endef
+SYSTEMD_ROOTFS_PRE_CMD_HOOKS += WPA_SUPPLICANT_WIFI_INSTALL_INIT_SYSTEMD_PRESET
 endif
 
 define WPA_SUPPLICANT_INSTALL_TARGET_CMDS
@@ -304,6 +313,7 @@ define WPA_SUPPLICANT_INSTALL_INIT_SYSTEMD
 		$(TARGET_DIR)/usr/lib/systemd/system/wpa_supplicant-wired@.service
 	$(INSTALL) -D -m 644 $(WPA_SUPPLICANT_PKGDIR)/50-wpa_supplicant.preset \
 		$(TARGET_DIR)/usr/lib/systemd/system-preset/50-wpa_supplicant.preset
+	$(WPA_SUPPLICANT_WIFI_INSTALL_INIT_SYSTEMD)
 endef
 
 $(eval $(generic-package))
