@@ -1,0 +1,59 @@
+#!/bin/sh
+
+MODULES="*.conf"
+MODULES_DIR="/etc/modules-load.d"
+
+[ -z "$(ls -A ${MODULES_DIR}/${MODULES} 2> /dev/null)" ] && exit 0
+
+load_unload() {
+	for module_file in $(ls -1 ${MODULES_DIR}); do
+		while read module args; do
+
+			case "$module" in
+				""|"#"*) continue ;;
+			esac
+
+			if [ "$1" = "load" ]; then
+				modprobe -q ${module} ${args} >/dev/null && \
+					printf ' %s success,' "$module" ||
+					printf ' %s failed,' "$module"
+			else
+				rmmod ${module} >/dev/null
+			fi
+
+		done < ${MODULES_DIR}/${module_file}
+	done
+}
+
+start() {
+	printf 'Starting modules:'
+
+	load_unload load
+
+	echo ' OK'
+}
+
+stop() {
+	printf 'Stopping modules:'
+
+	load_unload unload
+
+	echo 'OK'
+}
+
+restart() {
+	stop
+	sleep 1
+	start
+}
+
+case "$1" in
+	start|stop|restart)
+		"$1";;
+	reload)
+		# Restart, since there is no true "reload" feature.
+		restart;;
+	*)
+		echo "Usage: $0 {start|stop|restart|reload}"
+		exit 1
+esac
