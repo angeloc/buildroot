@@ -1,6 +1,7 @@
 config BR2_PACKAGE_BUSYBOX
 	bool "BusyBox"
 	default y
+	select BR2_PACKAGE_OVERLAYFS if BR2_ENABLE_OVERLAYFS
 	help
 	  The Swiss Army Knife of embedded Linux. It slices, it dices,
 	  it makes Julian Fries.
