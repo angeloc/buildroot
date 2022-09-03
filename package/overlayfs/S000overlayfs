@@ -1,0 +1,14 @@
+#!/bin/sh
+
+start() {
+	printf 'Starting overlayfs: '
+	/usr/bin/overlayfs-helper && echo "OK" || echo "FAIL"
+}
+
+case "$1" in
+	start)
+		"$1";;
+	*)
+		echo "Usage: $0 {start}"
+		exit 1
+esac

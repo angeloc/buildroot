@@ -1,0 +1,11 @@
+[Unit]
+Description=overlafs helper
+After=basic.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/overlayfs-helper.sh
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

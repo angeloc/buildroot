@@ -1,0 +1,4 @@
+config BR2_PACKAGE_OVERLAYFS
+	bool
+	help
+	  Overlayfs support scripts for enabling overlayfs
