@@ -1,0 +1,33 @@
+From add5f78e04e22f12da309f11122c1a9133b09d0b Mon Sep 17 00:00:00 2001
+From: Angelo Compagnucci <angelo@amarulasolutions.com>
+Date: Thu, 13 Oct 2022 22:37:29 +0200
+Subject: [PATCH] RISCV: dts: sun20i: d1: lichee-rv-dock: add bluetooth binding
+
+UART1 is attached to a rtl8723ds bluetooth module
+
+Signed-off-by: Angelo Compagnucci <angelo@amarulasolutions.com>
+---
+ arch/riscv/dts/sun20i-d1-lichee-rv-dock.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/riscv/dts/sun20i-d1-lichee-rv-dock.dts b/arch/riscv/dts/sun20i-d1-lichee-rv-dock.dts
+index 0b0f356e2e..c27e682c5e 100644
+--- a/arch/riscv/dts/sun20i-d1-lichee-rv-dock.dts
++++ b/arch/riscv/dts/sun20i-d1-lichee-rv-dock.dts
+@@ -158,6 +158,13 @@
+ 	pinctrl-0 = <&uart1_pg6_pins>, <&uart1_pg8_rts_cts_pins>;
+ 	pinctrl-names = "default";
+ 	status = "okay";
++
++	bluetooth {
++		compatible = "realtek,rtl8723ds-bt";
++		device-wake-gpios = <&gpio 6 15 GPIO_ACTIVE_HIGH>; /* PG16 */
++		enable-gpios = <&gpio 6 18 GPIO_ACTIVE_HIGH>; /* PG18 */
++		host-wake-gpios = <&gpio 6 17 GPIO_ACTIVE_HIGH>; /* PG17 */
++	};
+ };
+ 
+ &usbphy {
+-- 
+2.25.1
+

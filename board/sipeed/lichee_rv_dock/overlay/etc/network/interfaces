@@ -1,0 +1,7 @@
+auto lo
+iface lo inet loopback
+
+auto wlan0
+iface wlan0 inet dhcp
+pre-up modprobe 8723ds
+wpa-conf /etc/wpa_supplicant.conf

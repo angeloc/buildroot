@@ -12,6 +12,29 @@ How to build
 $ make lichee_rv_defconfig
 $ make
 
+Lichee RV dock
+===============
+
+Lichee RV Dock is a RISC-V Linux development kits with high integration, small
+size and affordable price designed for opensource developer. It's equipped with
+HDMI interface and it supports many screen by its screen convert board. It's
+also equipped with many peripherals, including a UAB-A port, 2.4G Wifi-BT module,
+an analog microphone and a speaker jack interface.
+
+How to build
+============
+
+$ make lichee_rv_dock_defconfig
+$ make
+
+Wifi
+==========
+
+Edit board/lichee_rv/overlay_dock/etc/wpa_supplicant.conf
+
+* Replace YOURSSID with your AP ssid
+* Replace YOURPASSWD with your AP password
+
 How to write the SD card
 ========================
 
