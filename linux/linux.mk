@@ -408,6 +408,9 @@ define LINUX_KCONFIG_FIXUP_CMDS
 		$(call KCONFIG_ENABLE_OPT,CONFIG_LOGO)
 		$(call KCONFIG_ENABLE_OPT,CONFIG_LOGO_LINUX_CLUT224))
 	$(call KCONFIG_DISABLE_OPT,CONFIG_GCC_PLUGINS)
+	# The kernel CONFIG_EXTRA_FIRMWARE feature requires to have the firmware full
+	# path for locating firmware file.
+	$(call KCONFIG_SET_OPT,CONFIG_EXTRA_FIRMWARE_DIR,"$(STAGING_DIR)/lib/firmware")
 	$(PACKAGES_LINUX_CONFIG_FIXUPS)
 endef
 
