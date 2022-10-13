@@ -33,6 +33,16 @@ define KCONFIG_ENABLE_OPT
 		$(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(1)=y, $(2)); \
 	fi
 endef
+# KCONFIG_APPEND_OPT (option, value, [, file])
+# If the option is already set append, else add new.
+define KCONFIG_APPEND_OPT
+	$(Q)if ! grep -q '^$(strip $(1))' $(call KCONFIG_DOT_CONFIG,$(3)); then \
+		$(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(1)=$(2), $(3)); \
+	else \
+		grep -E '$(strip $(1)).*$(strip $(2))' $(call KCONFIG_DOT_CONFIG,$(3)) || \
+		$(SED) 's|$(1)="\(.*\)"|$(1)="\1 $(2)"|g' $(call KCONFIG_DOT_CONFIG,$(3)); \
+	fi
+endef
 # KCONFIG_SET_OPT (option, value [, file])
 KCONFIG_SET_OPT     = $(call KCONFIG_MUNGE_DOT_CONFIG, $(1), $(1)=$(2), $(3))
 # KCONFIG_DISABLE_OPT  (option [, file])
