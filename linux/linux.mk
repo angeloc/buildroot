@@ -78,7 +78,8 @@ LINUX_DEPENDENCIES += \
 	$(if $(BR2_PACKAGE_INTEL_MICROCODE),intel-microcode) \
 	$(if $(BR2_PACKAGE_LINUX_FIRMWARE),linux-firmware) \
 	$(if $(BR2_PACKAGE_FIRMWARE_IMX),firmware-imx) \
-	$(if $(BR2_PACKAGE_WIRELESS_REGDB),wireless-regdb)
+	$(if $(BR2_PACKAGE_WIRELESS_REGDB),wireless-regdb) \
+	$(if $(BR2_PACKAGE_RTL8723DS_BT),rtl8723ds-bt)
 
 # Starting with 4.16, the generated kconfig paser code is no longer
 # shipped with the kernel sources, so we need flex and bison, but
