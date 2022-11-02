@@ -35,6 +35,9 @@ QT6BASE_CONF_OPTS = \
 	-DFEATURE_system_zlib=ON \
 	-DFEATURE_system_libb2=ON
 
+QT6BASE_CFLAGS = $(TARGET_CFLAGS)
+QT6BASE_CXXFLAGS = $(TARGET_CXXFLAGS)
+
 # x86 optimization options. While we have a BR2_X86_CPU_HAS_AVX512, it
 # is not clear yet how it maps to all the avx512* options of Qt, so we
 # for now keeps them disabled.
@@ -214,6 +217,21 @@ QT6BASE_DEPENDENCIES += zstd
 else
 QT6BASE_CONF_OPTS += -DFEATURE_zstd=OFF
 endif
+
+define QT6BASE_MAKE_BR_SPEC
+        mkdir -p $(@D)/mkspecs/devices/linux-buildroot-g++/
+        sed 's/@EGLFS_DEVICE@/$(QT6BASE_EGLFS_DEVICE)/g' \
+                $(QT6BASE_PKGDIR)/qmake.conf.in > \
+                $(@D)/mkspecs/devices/linux-buildroot-g++/qmake.conf
+        $(INSTALL) -m 0644 -D $(QT6BASE_PKGDIR)/qplatformdefs.h \
+                $(@D)/mkspecs/devices/linux-buildroot-g++/qplatformdefs.h
+endef
+
+QT6BASE_CONF_OPTS += -DQT_QMAKE_DEVICE_OPTIONS=CROSS_COMPILE="$(TARGET_CROSS)";BR_COMPILER_CFLAGS="$(QT6BASE_CFLAGS)";BR_COMPILER_CXXFLAGS="$(QT6BASE_CXX_FLAGS)"
+
+QT6BASE_PRE_CONFIGURE_HOOKS += QT6BASE_MAKE_BR_SPEC
+
+QT6BASE_POST_INSTALL_STAGING_HOOKS += QT6_INSTALL_QT_CONF
 
 $(eval $(cmake-package))
 $(eval $(host-cmake-package))
