@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Angelo Compagnucci <angelo.compagnucci@gmail.com>
+Date: Mon, 2 Nov 2026 18:07:29 +0100
+Subject: [PATCH] pack: skip the unsupported keys of the [OUTPUT] section
+
+The boot merger configuration files from rkbin also set IDB_PATH in
+the [OUTPUT] section, which then makes the pack command fail with:
+
+  unknown sec: IDB_PATH=rv1106_idblock_v1.15.102.img!
+
+Skip the keys following PATH up to the next section.
+
+Upstream: https://github.com/rockchip-linux/rkdeveloptool/pull/135
+Signed-off-by: Angelo Compagnucci <angelo.compagnucci@gmail.com>
+---
+ main.cpp | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+diff --git a/main.cpp b/main.cpp
+index ebf07f1..d8fe7d1 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -1211,7 +1211,26 @@ static bool parseOut(FILE* file) {
+ 		return false;
+ 	fixPath(gOpts.outPath);
+ 	printf("out: %s\n", gOpts.outPath);
+-	return true;
++
++	/* Skip the other keys, e.g. IDB_PATH, up to the next section */
++	while (1) {
++		char buf[MAX_LINE_LEN];
++		long eat = ftell(file);
++		long pos;
++
++		if (SCANF_EAT(file) != 0)
++			return false;
++		pos = ftell(file);
++		if (fscanf(file, "%s", buf) != 1) {
++			/* Leave the trailing blanks to the caller */
++			fseek(file, eat, SEEK_SET);
++			return true;
++		}
++		if (buf[0] == '[') {
++			fseek(file, pos, SEEK_SET);
++			return true;
++		}
++	}
+ }
+ 
+ 
+-- 
+2.34.1
+

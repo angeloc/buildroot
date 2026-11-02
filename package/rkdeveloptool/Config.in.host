@@ -1,0 +1,12 @@
+config BR2_PACKAGE_HOST_RKDEVELOPTOOL
+	bool "host rkdeveloptool"
+	depends on BR2_HOST_GCC_AT_LEAST_4_9 # host-libusb
+	help
+	  Tool to communicate with Rockchip SoCs in USB download
+	  (maskrom/loader) mode: it packs and downloads the USB
+	  loader, and reads, writes and erases the storage.
+
+	  https://github.com/rockchip-linux/rkdeveloptool
+
+comment "host rkdeveloptool needs a toolchain w/ host gcc >= 4.9"
+	depends on !BR2_HOST_GCC_AT_LEAST_4_9

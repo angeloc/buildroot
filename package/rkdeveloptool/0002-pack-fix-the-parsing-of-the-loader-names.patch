@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Angelo Compagnucci <angelo.compagnucci@gmail.com>
+Date: Mon, 2 Nov 2026 18:05:51 +0100
+Subject: [PATCH] pack: fix the parsing of the loader names
+
+The loader names are stored at the index given by their LOADER<n>
+key, which overflows the loader array when the keys are numbered from
+1, as in the boot merger configuration files from rkbin, e.g.:
+
+  LOADER1=FlashData
+  LOADER2=FlashBoot
+
+Store the loader names in the order they appear instead.
+
+Upstream: https://github.com/rockchip-linux/rkdeveloptool/pull/135
+Signed-off-by: Angelo Compagnucci <angelo.compagnucci@gmail.com>
+---
+ main.cpp | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/main.cpp b/main.cpp
+index 641d770..ebf07f1 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -1147,9 +1147,8 @@ static bool parseLoader(FILE* file) {
+ 		if (fscanf(file, OPT_LOADER_NAME "%d=%s", &index, buf)
+ 				!= 2)
+ 			return false;
+-		strcpy(gOpts.loader[index].name, buf);
+-		printf("name%d: %s\n", index, gOpts.loader[index].name);
+-		index++;
++		strcpy(gOpts.loader[i].name, buf);
++		printf("name%d: %s\n", index, gOpts.loader[i].name);
+ 	}
+ 	for (i=0; i<gOpts.loaderNum; i++) {
+ 		if (SCANF_EAT(file) != 0) {
+-- 
+2.34.1
+
