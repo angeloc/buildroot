@@ -1,5 +1,5 @@
-Luckfox Pico Mini
-=================
+Luckfox Pico Mini A and B
+=========================
 
 https://wiki.luckfox.com/Luckfox-Pico-Plus-Mini/
 
@@ -8,11 +8,11 @@ The Luckfox Pico Mini boards are based on the Rockchip RV1103 SoC
 The Pico Mini B adds a 128MB SPI NAND flash.
 
 Mainline support for the RV1103/RV1106 is still being upstreamed, so
-this configuration uses:
+these configurations use:
 - Linux 7.3.1 with the RV1103 and board devicetrees, from
   https://github.com/angeloc/linux (luckfox-pico-mini branch);
 - U-Boot 2026.10 with the RV1103B/RV1103/RV1106 series by Simon Glass,
-  not merged yet, and the Pico Mini B support, from
+  not merged yet, and the Pico Mini A and B support, from
   https://github.com/angeloc/u-boot (luckfox-pico-mini branch).
 
 The DDR initialization blob comes from rkbin.
@@ -20,6 +20,33 @@ The DDR initialization blob comes from rkbin.
 The BootROM loads the idbloader (DDR init and U-Boot SPL) from the SPI
 NAND if it holds a valid one, else from the microSD card, else it
 enters the USB download mode (maskrom).
+
+Pico Mini A: boot from the microSD card
+=======================================
+
+Build:
+
+  $ make luckfox_pico_mini_a_defconfig
+  $ make
+
+Files created in output/images:
+
+├── rootfs.ext2
+├── rootfs.ext4 -> rootfs.ext2
+├── rv1103-luckfox-pico-mini-a.dtb
+├── rv1106_ddr_924MHz_v1.15.bin
+├── sdcard.img
+├── u-boot-rockchip.bin
+└── zImage
+
+Write the image to a microSD card (as root):
+
+  $ sudo dd if=output/images/sdcard.img of=/dev/sdX bs=4M conv=fsync
+
+where /dev/sdX is the microSD card device.
+
+The SPL loads U-Boot from the microSD card, which boots the system
+from its first partition (extlinux.conf).
 
 Pico Mini B: boot from the SPI NAND
 ===================================
