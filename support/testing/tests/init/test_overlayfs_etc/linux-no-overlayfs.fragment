@@ -1,0 +1,2 @@
+# Disabled here, to check that BR2_ROOTFS_OVERLAYFS_ETC enables it
+# CONFIG_OVERLAY_FS is not set
