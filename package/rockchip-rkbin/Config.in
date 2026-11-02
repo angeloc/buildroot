@@ -24,4 +24,24 @@ config BR2_PACKAGE_ROCKCHIP_RKBIN_TEE_FILENAME
 	  Path to the TEE file inside the rkbin repository. The
 	  specified file will be copied and used by U-Boot as TEE.
 
+config BR2_PACKAGE_ROCKCHIP_RKBIN_USB_LOADER
+	bool "Rockchip USB loader"
+	depends on BR2_HOST_GCC_AT_LEAST_4_9 # host-rkdeveloptool
+	select BR2_PACKAGE_HOST_RKDEVELOPTOOL
+	help
+	  Pack a USB loader with rkdeveloptool and copy it to the
+	  images directory, to be used with rkdeveloptool in USB
+	  download (maskrom) mode.
+
+config BR2_PACKAGE_ROCKCHIP_RKBIN_USB_LOADER_INI
+	string "Rockchip rkbin USB loader configuration file path"
+	depends on BR2_PACKAGE_ROCKCHIP_RKBIN_USB_LOADER
+	help
+	  Path to the boot merger configuration file inside the rkbin
+	  repository describing the USB loader, e.g.
+	  RKBOOT/RV1106MINIALL.ini.
+
+comment "Rockchip USB loader needs a toolchain w/ host gcc >= 4.9"
+	depends on !BR2_HOST_GCC_AT_LEAST_4_9
+
 endif # BR2_PACKAGE_ROCKCHIP_RKBIN
