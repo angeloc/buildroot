@@ -1,0 +1,2 @@
+CONFIG_SYS_MALLOC_LEN=0x400000
+CONFIG_BOOTCOMMAND="setenv bootargs console=ttyS2,115200 ubi.mtd=ubi,0,0,0,1 ubi.fm_autoconvert=1 root=ubi0:rootfs rootfstype=ubifs rootwait; mtd read boot 0x2000000 && bootm 0x2000000"

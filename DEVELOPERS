@@ -222,8 +222,10 @@ N:	Andrey Yurovsky <yurovsky@gmail.com>
 F:	package/rauc/
 
 N:	Angelo Compagnucci <angelo.compagnucci@gmail.com>
+F:	board/luckfox/pico-mini/
 F:	board/sipeed/lichee_rv/
 F:	board/sipeed/lichee_rv_dock/
+F:	configs/luckfox_pico_mini_*
 F:	configs/sipeed_lichee_rv*
 F:	package/apparmor/
 F:	package/corkscrew/
