@@ -963,6 +963,19 @@ pkg-stats:
 		--html $(O)/pkg-stats.html \
 		--nvd-path $(DL_DIR)/buildroot-nvd
 
+# Re-create the target directory from scratch, without rebuilding
+# anything: remove it, and make the target installation step of every
+# package run again. With per-package directories, the target directory
+# is re-assembled from the per-package target directories by
+# target-finalize, so there is no installation step to re-run.
+TARGET_CLEAN_FOR_REINSTALL = \
+	rm -rf $(BASE_TARGET_DIR) \
+	$(if $(BR2_PER_PACKAGE_DIRECTORIES),,; \
+		for s in $(BUILD_DIR)/*/.stamp_target_installed; do \
+			[ -e "$${s}" ] || continue; \
+			rm -f "$${s}" "$${s%/*}/.stamp_installed"; \
+		done)
+
 else # ifeq ($(BR2_HAVE_DOT_CONFIG),y)
 
 # Some subdirectories are also package names. To avoid that "make linux"
@@ -1129,6 +1142,13 @@ show-vars:
 		$(info $(i)) \
 	)
 
+.PHONY: target-clean-for-reinstall
+target-clean-for-reinstall:
+	$(TARGET_CLEAN_FOR_REINSTALL)
+
+.PHONY: target-reinstall
+target-reinstall: target-clean-for-reinstall .WAIT all
+
 .PHONY: clean
 clean:
 	rm -rf $(BASE_TARGET_DIR) $(BINARIES_DIR) $(HOST_DIR) $(HOST_DIR_SYMLINK) \
@@ -1153,6 +1173,7 @@ help:
 	@echo '  all                    - make world'
 	@echo '  toolchain              - build toolchain'
 	@echo '  sdk                    - build relocatable SDK'
+	@echo '  target-reinstall       - re-create the target directory, without rebuilding'
 	@echo
 	@echo 'Configuration:'
 	@echo '  menuconfig             - interactive curses-based configurator'

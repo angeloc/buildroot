@@ -49,7 +49,8 @@ can help you understand how to work with Buildroot:
    _sysroot_. A full rebuild is needed to get rid of this
    package. However, generally you don't necessarily need this package
    to be removed right now: you can wait for the next lunch break to
-   restart the build from scratch.
+   restart the build from scratch. If you only need its files out of
+   the target root filesystem, see +make target-reinstall+ below.
 
  * When the sub-options of a package are changed, the package is not
    automatically rebuilt. After making such changes, rebuilding only
@@ -89,6 +90,21 @@ For reference, a full rebuild is achieved by running:
 ----
 $ make clean all
 ----
+
+When only the content of the target root filesystem needs to be
+re-created, for example to get rid of the files of a package that was
+removed from the configuration, a lighter alternative is:
+
+----
+$ make target-reinstall
+----
+
+It removes +output/target+ and installs all the enabled packages into
+it again, without rebuilding them, then runs the usual finalization
+steps (root filesystem overlays, post-build scripts) and generates the
+images. The toolchain _sysroot_ (+output/staging+) is not changed, and
+packages built against a removed package keep using it: in that case,
+a full rebuild is still needed.
 
 [[rebuild-pkg]]
 === Understanding how to rebuild packages
