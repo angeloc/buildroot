@@ -429,3 +429,35 @@ can be chosen from +System configuration+, +Init system+:
 The solution recommended by Buildroot developers is to use the
 *BusyBox init* as it is sufficient for most embedded
 systems. *systemd* can be used for more complex situations.
+
+==== Writable /etc on a read-only root filesystem
+
+When the root filesystem stays read-only (+BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW+
+disabled), +/etc+ can still be made writable with an overlayfs whose
+upper layer is on a persistent device, by enabling
++BR2_ROOTFS_OVERLAYFS_ETC+. This works with the BusyBox, systemV and
+systemd init systems.
+
+The init system reads +/etc+ as soon as it starts, so the overlay
+can't be mounted from +/etc/fstab+ or from a systemd unit. Instead,
+Buildroot moves the init program to +/usr/libexec/overlayfs-etc/init+
+and installs a small script as +/sbin/init+, which:
+
+ * mounts the persistent device (+BR2_ROOTFS_OVERLAYFS_ETC_DEVICE+,
+   +BR2_ROOTFS_OVERLAYFS_ETC_FSTYPE+, +BR2_ROOTFS_OVERLAYFS_ETC_MOUNT_OPTIONS+)
+   on +BR2_ROOTFS_OVERLAYFS_ETC_MOUNT_POINT+ (+/data+ by default);
+ * mounts an overlayfs on +/etc+, with the original +/etc+ as the lower
+   layer and +<mount point>/overlay-etc/upper+ as the upper layer;
+ * optionally (+BR2_ROOTFS_OVERLAYFS_ETC_EXPOSE_LOWER+), bind-mounts the
+   original +/etc+ read-only on +<mount point>/overlay-etc/lower+;
+ * starts the original init program.
+
+The persistent device must already exist and be formatted, which is
+left to the integration, and it must not be listed in +/etc/fstab+.
+If it cannot be mounted, the system still boots, with a read-only
++/etc+.
+
+Only +/etc+ is handled. With systemd, +/var+ is managed by the
++/var management+ option. With BusyBox or systemV init, +/var+ only
+provides volatile directories (symbolic links to +/tmp+ and +/run+),
+and +/var/lib+ stays read-only.
