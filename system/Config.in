@@ -517,6 +517,68 @@ config BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW
 	  remain read-only.
 	  If unsure, say Y.
 
+config BR2_ROOTFS_OVERLAYFS_ETC
+	bool "mount an overlayfs on /etc"
+	depends on !BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW
+	depends on BR2_ROOTFS_SKELETON_DEFAULT
+	depends on BR2_INIT_BUSYBOX || BR2_INIT_SYSV || BR2_INIT_SYSTEMD
+	help
+	  Make /etc writable on a read-only root filesystem, with an
+	  overlayfs whose upper layer is on a persistent device.
+
+	  The init system already needs /etc when it starts, so
+	  /sbin/init is replaced by a script which mounts the
+	  persistent device, mounts the overlayfs on /etc, and then
+	  starts the original init, moved to
+	  /usr/libexec/overlayfs-etc/init. The changes to /etc are
+	  stored in <mount point>/overlay-etc/upper on the persistent
+	  device.
+
+	  The persistent device must exist and be formatted: this is
+	  left to the integration. It must not be listed in /etc/fstab.
+	  If it cannot be mounted, the system boots with a read-only
+	  /etc.
+
+	  Only /etc is handled: for /var, see the "/var management"
+	  option with systemd; with busybox or sysvinit, /var only
+	  provides volatile directories, and /var/lib is read-only.
+
+if BR2_ROOTFS_OVERLAYFS_ETC
+
+config BR2_ROOTFS_OVERLAYFS_ETC_DEVICE
+	string "persistent device"
+	help
+	  The device holding the upper layer of the /etc overlay, for
+	  example /dev/mmcblk0p3 or ubi0:data.
+
+config BR2_ROOTFS_OVERLAYFS_ETC_FSTYPE
+	string "persistent device filesystem type"
+	default "ext4"
+	help
+	  The filesystem type of the persistent device, for example
+	  ext4 or ubifs.
+
+config BR2_ROOTFS_OVERLAYFS_ETC_MOUNT_OPTIONS
+	string "persistent device mount options"
+	default "defaults"
+	help
+	  The options used to mount the persistent device.
+
+config BR2_ROOTFS_OVERLAYFS_ETC_MOUNT_POINT
+	string "persistent device mount point"
+	default "/data"
+	help
+	  Where the persistent device is mounted. The directory is
+	  created in the root filesystem.
+
+config BR2_ROOTFS_OVERLAYFS_ETC_EXPOSE_LOWER
+	bool "expose the original /etc"
+	help
+	  Bind mount the original /etc content read-only on
+	  <mount point>/overlay-etc/lower.
+
+endif
+
 config BR2_SYSTEM_DHCP
 	string "Network interface to configure through DHCP"
 	default ""

@@ -104,4 +104,67 @@ endif
 endif
 SKELETON_INIT_COMMON_TARGET_FINALIZE_HOOKS += SKELETON_INIT_COMMON_SET_BIN_SH
 
+ifeq ($(BR2_ROOTFS_OVERLAYFS_ETC),y)
+SKELETON_INIT_COMMON_OVERLAYFS_ETC_DEVICE = $(call qstrip,$(BR2_ROOTFS_OVERLAYFS_ETC_DEVICE))
+SKELETON_INIT_COMMON_OVERLAYFS_ETC_FSTYPE = $(call qstrip,$(BR2_ROOTFS_OVERLAYFS_ETC_FSTYPE))
+SKELETON_INIT_COMMON_OVERLAYFS_ETC_MOUNT_OPTIONS = $(call qstrip,$(BR2_ROOTFS_OVERLAYFS_ETC_MOUNT_OPTIONS))
+SKELETON_INIT_COMMON_OVERLAYFS_ETC_MOUNT_POINT = $(call qstrip,$(BR2_ROOTFS_OVERLAYFS_ETC_MOUNT_POINT))
+
+ifeq ($(BR_BUILDING)$(BR2_ROOTFS_OVERLAYFS_ETC_DEVICE),y"")
+$(error BR2_ROOTFS_OVERLAYFS_ETC_DEVICE can't be empty)
+endif
+
+ifeq ($(BR_BUILDING)$(BR2_ROOTFS_OVERLAYFS_ETC_FSTYPE),y"")
+$(error BR2_ROOTFS_OVERLAYFS_ETC_FSTYPE can't be empty)
+endif
+
+ifeq ($(BR_BUILDING)$(BR2_ROOTFS_OVERLAYFS_ETC_MOUNT_POINT),y"")
+$(error BR2_ROOTFS_OVERLAYFS_ETC_MOUNT_POINT can't be empty)
+endif
+
+define SKELETON_INIT_COMMON_LINUX_CONFIG_FIXUPS
+	$(call KCONFIG_ENABLE_OPT,CONFIG_OVERLAY_FS)
+endef
+
+# /sbin/init is replaced by a pre-init mounting the /etc overlay, which
+# then starts the original init, moved to $(SKELETON_INIT_COMMON_OVERLAYFS_ETC_INIT).
+# The original init keeps the "init" name, as busybox selects its applet
+# from it. A relative symlink is turned into an absolute one, so that it
+# still points to the same file from its new location. The original
+# init is only moved when /sbin/init is not the pre-init yet, so that
+# this hook can run again on rebuilds.
+SKELETON_INIT_COMMON_OVERLAYFS_ETC_INIT = /usr/libexec/overlayfs-etc/init
+
+define SKELETON_INIT_COMMON_OVERLAYFS_ETC
+	mkdir -p $(TARGET_DIR)$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_MOUNT_POINT)
+	if ! grep -qs '^# BR2_ROOTFS_OVERLAYFS_ETC pre-init$$' $(TARGET_DIR)/sbin/init; then \
+		mkdir -p $(dir $(TARGET_DIR)$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_INIT)); \
+		rm -f $(TARGET_DIR)$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_INIT); \
+		if [ -L $(TARGET_DIR)/sbin/init ]; then \
+			target="$$(readlink $(TARGET_DIR)/sbin/init)"; \
+			case "$${target}" in \
+			/*) ;; \
+			../*) target="/$${target#../}" ;; \
+			*) target="/sbin/$${target}" ;; \
+			esac; \
+			ln -s "$${target}" $(TARGET_DIR)$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_INIT); \
+			rm -f $(TARGET_DIR)/sbin/init; \
+		else \
+			mv $(TARGET_DIR)/sbin/init $(TARGET_DIR)$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_INIT); \
+		fi; \
+	fi
+	rm -f $(TARGET_DIR)/sbin/init
+	sed -e 's|@DEVICE@|$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_DEVICE)|g' \
+		-e 's|@FSTYPE@|$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_FSTYPE)|g' \
+		-e 's|@MOUNT_OPTIONS@|$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_MOUNT_OPTIONS)|g' \
+		-e 's|@MOUNT_POINT@|$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_MOUNT_POINT)|g' \
+		-e 's|@INIT@|$(SKELETON_INIT_COMMON_OVERLAYFS_ETC_INIT)|g' \
+		-e 's|@EXPOSE_LOWER@|$(if $(BR2_ROOTFS_OVERLAYFS_ETC_EXPOSE_LOWER),true,false)|g' \
+		$(SKELETON_INIT_COMMON_PKGDIR)/overlayfs-etc-preinit.sh \
+		> $(TARGET_DIR)/sbin/init
+	chmod 0755 $(TARGET_DIR)/sbin/init
+endef
+SKELETON_INIT_COMMON_TARGET_FINALIZE_HOOKS += SKELETON_INIT_COMMON_OVERLAYFS_ETC
+endif
+
 $(eval $(generic-package))
