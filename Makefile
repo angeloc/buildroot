@@ -142,7 +142,8 @@ nobuild_targets := source %-source \
 	clean distclean help show-targets graph-depends \
 	%-graph-depends %-show-depends %-show-version \
 	graph-build graph-size list-defconfigs \
-	savedefconfig update-defconfig printvars show-vars show-info-all
+	savedefconfig update-defconfig printvars show-vars show-info-all \
+	show-stale
 ifeq ($(MAKECMDGOALS),)
 BR_BUILDING = y
 else ifneq ($(filter-out $(nobuild_targets),$(MAKECMDGOALS)),)
@@ -1150,6 +1151,14 @@ target-clean-for-reinstall:
 .PHONY: target-reinstall
 target-reinstall: target-clean-for-reinstall .WAIT all
 
+.PHONY: show-stale
+show-stale:
+ifeq ($(BR2_REBUILD_CHANGED_PACKAGES),y)
+	@$(call show-stale-cmd,$(BUILD_RECORDS_STALE))
+else
+	@echo "Enable BR2_REBUILD_CHANGED_PACKAGES to record how the packages are built."
+endif
+
 .PHONY: clean
 clean:
 	rm -rf $(BASE_TARGET_DIR) $(BINARIES_DIR) $(HOST_DIR) $(HOST_DIR_SYMLINK) \
@@ -1175,6 +1184,8 @@ help:
 	@echo '  toolchain              - build toolchain'
 	@echo '  sdk                    - build relocatable SDK'
 	@echo '  target-reinstall       - re-create the target directory, without rebuilding'
+	@echo '  show-stale             - list the packages the next build rebuilds or removes'
+	@echo '                           (with BR2_REBUILD_CHANGED_PACKAGES)'
 	@echo
 	@echo 'Configuration:'
 	@echo '  menuconfig             - interactive curses-based configurator'

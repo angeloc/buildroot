@@ -144,16 +144,32 @@ remove-builds-cmd = \
 	$(if $(3),&& echo 'No file list for $(sort $(3)): the target directory is re-created.' && \
 		{ $(TARGET_CLEAN_FOR_REINSTALL); })
 
-# A build of the whole system ('make', 'make all' or 'make world', not a
-# dry run) compares and removes them before anything else, while
-# parsing: in a recipe, the automatic variables of its target would be
-# used by the commands instead of those of the packages, and make could
-# already have looked at a stamp file of a removed package.
-ifeq ($(BUILD_RECORDS_SYSTEM)$(BUILD_RECORDS_DRY_RUN),y)
+# $(1): package names, with those built against them. List them, as
+# removed by the next build.
+show-stale-cmd = \
+	$(if $(1),,echo 'Nothing to rebuild or remove: every package was built as currently configured.';) \
+	$(if $(filter $(BUILD_RECORDS_ENABLED),$(1)),printf '%s\n' 'Packages to rebuild:' \
+		$(foreach n,$(filter $(BUILD_RECORDS_ENABLED),$(1)),'  $(call build-records-describe,$(n))');) \
+	$(if $(filter-out $(BUILD_RECORDS_ENABLED),$(1)),printf '%s\n' 'Packages to remove:' \
+		$(foreach n,$(filter-out $(BUILD_RECORDS_ENABLED),$(1)),'  $(call build-records-describe,$(n))');) \
+	$(if $(call build-records-no-target-list,$(call build-records-builds,$(1))),\
+		echo 'The target directory will be re-created: no file list for $(sort \
+			$(call build-records-no-target-list,$(call build-records-builds,$(1)))).';) \
+	true
+
+# Compare while parsing: in a recipe, the automatic variables would be
+# those of the recipe, not of the packages.
+ifneq ($(filter show-stale,$(MAKECMDGOALS))$(BUILD_RECORDS_SYSTEM),)
 $(if $(BUILD_RECORDS),$(build-records-hash))
 BUILD_RECORDS_NOT_ENABLED := $(BUILD_RECORDS_NOT_ENABLED)
 BUILD_RECORDS_CHANGED := $(BUILD_RECORDS_CHANGED)
 BUILD_RECORDS_STALE := $(BUILD_RECORDS_STALE)
+endif
+
+# A build of the whole system (see BUILD_RECORDS_SYSTEM, not 'make -n')
+# removes the stale packages first, while parsing, before make looks at
+# their stamp files.
+ifeq ($(BUILD_RECORDS_SYSTEM)$(BUILD_RECORDS_DRY_RUN),y)
 ifneq ($(BUILD_RECORDS_STALE),)
 ifneq ($(shell { $(call remove-packages-cmd,$(BUILD_RECORDS_STALE)); } >&2 || echo failed),)
 $(error Failed to remove the stale packages)

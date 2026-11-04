@@ -190,6 +190,13 @@ did not change, and the build stays clean. With +BR2_PACKAGE_CACHE+ (see
 xref:package-cache[]), the packages found in the cache are not built at
 all, and ccache speeds up the ones that are.
 
++make show-stale+ lists the
+packages that the next +make+ rebuilds, and those it removes, without
+doing it. To see why a package is rebuilt, build it with +make V=1+:
+the text is then also kept in +.stamp_build_record.verbose+, and
++make V=1 show-stale+ writes the current one in
++.stamp_build_record.verbose.new+, next to it.
+
 This does not detect everything:
 
  * The content of the files installed by a package does not trigger a
