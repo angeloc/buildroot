@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+"""Remove the build of packages and of everything built against them.
+
+When a package is configured, its build record is written in its build
+directory, <build-dir>/<pkg>-<version>/.stamp_build_record (see build-record
+in package/pkg-generic.mk). From the package name and dependencies in
+these records (BUILD_RECORD_NAME_<dir> and BUILD_RECORD_DEPS_<dir>), this
+script finds the packages to remove: the given ones and, recursively,
+every package that was built against one of them.
+
+It then removes their build directories (and their per-package
+directories), so that the following build rebuilds those that are still
+enabled.
+
+The files a removed package installed in the target, staging and host
+directories, as listed in the .files-list.txt, .files-list-staging.txt
+and .files-list-host.txt of its build directory, are removed from them,
+but those also listed by a package that is not removed. With
+per-package directories, these are the final directories, assembled
+from the per-package ones. When a removed package was installed in the
+target directory but has no file list, the script exits with
+RECREATE_TARGET, for the target directory to be re-created from
+scratch instead.
+"""
+
+import argparse
+import glob
+import os
+import shutil
+import sys
+
+RECORD = ".stamp_build_record"
+RECREATE_TARGET = 3
+
+
+def read_records(build_dir):
+    """Return {name: [(build directory, set of dependencies)]} and the
+    configured build directories without a record."""
+    records = {}
+    for path in glob.glob(os.path.join(build_dir, "*", RECORD)):
+        build = os.path.dirname(path)
+        fields = {}
+        with open(path) as f:
+            for line in f:
+                key, _, value = line.partition(" = ")
+                fields[key] = value.strip()
+        name = fields.get("BUILD_RECORD_NAME_" + os.path.basename(build))
+        if name:
+            deps = set(fields.get("BUILD_RECORD_DEPS_" + os.path.basename(build), "").split())
+            records.setdefault(name, []).append((build, deps))
+    unknown = [os.path.dirname(p)
+               for p in glob.glob(os.path.join(build_dir, "*", ".stamp_configured"))
+               if not os.path.exists(os.path.join(os.path.dirname(p), RECORD))]
+    return records, sorted(unknown)
+
+
+def listed_files(build, file_list):
+    """Return the files listed in a file list of a build directory
+    (.files-list.txt or .files-list-staging.txt), relative to the
+    directory the package was installed in."""
+    files = set()
+    with open(os.path.join(build, file_list)) as f:
+        for line in f:
+            files.add(os.path.normpath(line.rstrip("\n").partition(",")[2]))
+    return files
+
+
+def remove_listed_files(root, file_list, build_dir, removed_builds):
+    """Remove from root the files installed by the removed builds, but
+    those also installed by the other builds. The directories are kept,
+    even when left empty: the file lists do not tell which package made
+    them, and the packages that install their files without creating the
+    directory rely on those of the skeleton (e.g. usr/sbin)."""
+    kept = set()
+    for path in glob.glob(os.path.join(build_dir, "*", file_list)):
+        if os.path.dirname(path) not in removed_builds:
+            kept |= listed_files(os.path.dirname(path), file_list)
+    for build in removed_builds:
+        if not os.path.exists(os.path.join(build, file_list)):
+            continue
+        for rel in listed_files(build, file_list) - kept:
+            path = os.path.join(root, rel)
+            if os.path.islink(path) or os.path.isfile(path):
+                os.remove(path)
+
+
+def without_target_list(builds):
+    """The builds installed in the target directory without a file list
+    of it: their files there can't be found."""
+    return [b for b in builds
+            if os.path.exists(os.path.join(b, ".stamp_target_installed"))
+            and not os.path.exists(os.path.join(b, ".files-list.txt"))]
+
+
+def closure(records, roots):
+    """Return {name: reason} for the roots and everything built against them."""
+    removed = dict(roots)
+    changed = True
+    while changed:
+        changed = False
+        for name, builds in records.items():
+            if name in removed:
+                continue
+            against = sorted(set().union(*(deps for _, deps in builds)) & removed.keys())
+            if against:
+                removed[name] = "built against %s" % " ".join(against)
+                changed = True
+    return removed
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--build-dir", required=True)
+    parser.add_argument("--per-package-dir")
+    parser.add_argument("--target-dir",
+                        help="target directory, to remove the files of the removed packages from")
+    parser.add_argument("--staging-dir",
+                        help="staging directory, to remove the files of the removed packages from")
+    parser.add_argument("--host-dir",
+                        help="host directory, to remove the files of the removed packages from")
+    parser.add_argument("--enabled", default="",
+                        help="space-separated list of the packages built by make, rebuilt if removed")
+    parser.add_argument("--not-enabled", default="",
+                        help="space-separated list of the packages no longer enabled")
+    parser.add_argument("--changed", default="",
+                        help="space-separated list of the packages whose configuration changed")
+    parser.add_argument("packages", nargs="*")
+    args = parser.parse_args()
+
+    enabled = set(args.enabled.split())
+    records, unknown = read_records(args.build_dir)
+
+    roots = {}
+    for name in args.packages:
+        if name not in records:
+            print("%s: no build to remove." % name)
+        roots[name] = None
+    for name in args.changed.split():
+        roots[name] = "configuration changed"
+    for name in args.not_enabled.split():
+        roots[name] = "no longer enabled"
+
+    removed = closure(records, {n: r for n, r in roots.items() if n in records})
+    removed_builds = set(build for name in removed for build, _ in records[name])
+    recreate_target = args.target_dir and without_target_list(removed_builds)
+
+    def describe(name):
+        return "%s (%s)" % (name, removed[name]) if removed[name] else name
+
+    if args.target_dir and not recreate_target:
+        remove_listed_files(args.target_dir, ".files-list.txt", args.build_dir, removed_builds)
+    if args.staging_dir:
+        remove_listed_files(args.staging_dir, ".files-list-staging.txt", args.build_dir, removed_builds)
+    if args.host_dir:
+        remove_listed_files(args.host_dir, ".files-list-host.txt", args.build_dir, removed_builds)
+
+    for name in sorted(removed):
+        print("%s %s" % ("Rebuilding" if name in enabled else "Removing", describe(name)))
+        for build, _ in records[name]:
+            shutil.rmtree(build, ignore_errors=True)
+        if args.per_package_dir:
+            shutil.rmtree(os.path.join(args.per_package_dir, name), ignore_errors=True)
+
+    if unknown and removed:
+        print("Warning: these builds have no build record, packages built against "
+              "the removed ones among them are not detected:")
+        for build in unknown:
+            print("  %s" % os.path.basename(build))
+    if recreate_target:
+        print("No file list for %s: the target directory is re-created."
+              % " ".join(sorted(os.path.basename(b) for b in recreate_target)))
+        return RECREATE_TARGET
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

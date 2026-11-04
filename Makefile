@@ -977,8 +977,97 @@ TARGET_CLEAN_FOR_REINSTALL = \
 			rm -f "$${s}" "$${s%/*}/.stamp_installed"; \
 		done)
 
+# Remove the build of the given packages and of the packages built
+# against them, using the build records (see build-record in
+# package/pkg-generic.mk). The packages that 'make' builds (the enabled
+# ones, the filesystems and all their dependencies) are rebuilt. Their
+# files are removed from the target, staging and host directories (the
+# final ones, with per-package directories), using their file lists.
+REMOVE_PACKAGES = $(TOPDIR)/support/scripts/remove-packages \
+	--build-dir $(BUILD_DIR) \
+	$(if $(BR2_PER_PACKAGE_DIRECTORIES),--per-package-dir $(PER_PACKAGE_DIR)) \
+	--target-dir $(BASE_TARGET_DIR) \
+	--staging-dir $(call qstrip,$(BR2_HOST_DIR))/$(STAGING_SUBDIR) \
+	--host-dir $(call qstrip,$(BR2_HOST_DIR)) \
+	--enabled "$(sort $(foreach i,$(PACKAGES) $(TARGETS_ROOTFS), \
+		$(i) $($(call UPPERCASE,$(i))_FINAL_RECURSIVE_DEPENDENCIES)))"
+
+# $(1): arguments of REMOVE_PACKAGES. Remove the packages, then
+# re-create the target directory when their files could not be removed
+# from it (exit code 3).
+remove-packages-cmd = \
+	{ $(REMOVE_PACKAGES) $(1); ret=$$?; \
+	if [ $$ret -eq 3 ]; then \
+		$(TARGET_CLEAN_FOR_REINSTALL); ret=$$?; \
+	fi; test $$ret -eq 0; }
+
 ifeq ($(BR2_REBUILD_CHANGED_PACKAGES),y)
 SHA256SUM := $(shell which sha256sum || type -p sha256sum || echo sha256sum)
+
+# Compare the build records of the packages built so far (see
+# build-record in package/pkg-generic.mk) with the current definitions:
+# the target packages no longer enabled, and the packages built
+# differently than recorded, must be removed with the packages built
+# against them.
+BUILD_RECORDS_FILES := $(wildcard $(BUILD_DIR)/*/.stamp_build_record)
+BUILD_RECORDS := $(patsubst $(BUILD_DIR)/%/.stamp_build_record,%,$(BUILD_RECORDS_FILES))
+-include $(BUILD_RECORDS_FILES)
+
+# $(1), $(2): texts; empty if they are equal
+build-record-differ = $(strip $(subst $(strip $(1)),,$(strip $(2))) $(subst $(strip $(2)),,$(strip $(1))))
+
+# $(1): build directory name. Expand the configure and build commands as
+# in the configure step of the package, where the automatic variables
+# give its build directory and stamp file, and PKG is set.
+build-record-current-cmds = \
+	$(eval PKG := $(BUILD_RECORD_PKG_$(1)))$\
+	$(eval @D := $(BUILD_DIR)/$(1))$\
+	$(eval @ := $(BUILD_DIR)/$(1)/.stamp_configured)$\
+	$(call build-record-cmds,$(BUILD_RECORD_PKG_$(1)))$\
+	$(eval PKG :=)$(eval @D :=)$(eval @ :=)
+
+# Hash the current text of each recorded package, with its patches, with
+# one shell call each (in debug mode, the text is kept in
+# .stamp_build_record.verbose.new, next to the recorded one).
+build-records-hash = \
+	$(foreach d,$(BUILD_RECORDS),$(eval BUILD_RECORD_CURRENT_HASH_$(d) := $(shell \
+		$(call build-record-hash-cmd,$(BUILD_RECORD_PKG_$(d)),$\
+			$(call build-record-text,$(BUILD_RECORD_VARS_$(d)),$(call build-record-current-cmds,$(d))),$\
+			$(BUILD_DIR)/$(d)/.stamp_build_record.verbose.new))))
+
+# $(1): build directory name; empty if the package would be built as
+# recorded
+build-record-changed = \
+	$(or \
+		$(call build-record-differ,$(BUILD_RECORD_DEPS_$(1)), \
+			$($(BUILD_RECORD_PKG_$(1))_FINAL_DEPENDENCIES)), \
+		$(call build-record-differ,$(BUILD_RECORD_HASH_$(1)), \
+			$(BUILD_RECORD_CURRENT_HASH_$(1))))
+
+BUILD_RECORDS_NOT_ENABLED = \
+	$(sort $(filter-out host-% $(PACKAGES), \
+		$(foreach d,$(BUILD_RECORDS),$(BUILD_RECORD_NAME_$(d)))))
+BUILD_RECORDS_CHANGED = \
+	$(sort $(filter-out $(BUILD_RECORDS_NOT_ENABLED), \
+		$(foreach d,$(BUILD_RECORDS), \
+			$(if $(call build-record-changed,$(d)),$(BUILD_RECORD_NAME_$(d))))))
+
+# A build compares and removes them before anything else, while
+# parsing: in a recipe, the automatic variables of its target would be
+# used by the commands instead of those of the packages, and make could
+# already have looked at a stamp file of a removed package.
+ifeq ($(BR_BUILDING)$(filter-out all world,$(MAKECMDGOALS)),y)
+BUILD_RECORDS_HASHES := $(if $(BUILD_RECORDS),$(build-records-hash))
+BUILD_RECORDS_NOT_ENABLED := $(BUILD_RECORDS_NOT_ENABLED)
+BUILD_RECORDS_CHANGED := $(BUILD_RECORDS_CHANGED)
+ifneq ($(BUILD_RECORDS_NOT_ENABLED)$(BUILD_RECORDS_CHANGED),)
+ifneq ($(shell $(call remove-packages-cmd, \
+		--not-enabled "$(BUILD_RECORDS_NOT_ENABLED)" \
+		--changed "$(BUILD_RECORDS_CHANGED)") >&2 || echo failed),)
+$(error Failed to remove the stale packages)
+endif
+endif
+endif
 endif # BR2_REBUILD_CHANGED_PACKAGES
 
 else # ifeq ($(BR2_HAVE_DOT_CONFIG),y)

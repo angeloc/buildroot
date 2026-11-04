@@ -106,6 +106,77 @@ images. The toolchain _sysroot_ (+output/staging+) is not changed, and
 packages built against a removed package keep using it: in that case,
 a full rebuild is still needed.
 
+[[rebuild-changed-packages]]
+==== Rebuilding the packages whose build configuration changed
+
+When +BR2_REBUILD_CHANGED_PACKAGES+ is enabled (in +Build options+),
+Buildroot records how each package is built when it is configured. It
+makes a text of:
+
+ * the definition of all the make variables of the package
+   (+FOO_VERSION+, +FOO_DEPENDENCIES+, +FOO_CONF_OPTS+, +FOO_BUILD_CMDS+,
+   ...), verbatim, as written in the +.mk+ files, before expansion;
+ * the configure and build commands of the package (+FOO_CONFIGURE_CMDS+,
+   +FOO_BUILD_CMDS+ and the hooks run before and after them, including
+   those of the package infrastructure), expanded, as they are run: so
+   the options they get from other variables, such as the compiler
+   flags, are recorded too;
+ * the SHA256 hashes of the patches applied to the package, from its
+   directory and from +BR2_GLOBAL_PATCH_DIR+.
+
+Only the SHA256 hash of this text, computed with the +sha256sum+ tool
+of the host, is kept, in the +.stamp_build_record+ file of the build
+directory of the package
+(+output/build/<package>-<version>/.stamp_build_record+), along with
+the packages the package is built against (its dependencies).
+
+At each +make+, before building anything, Buildroot makes the same text
+from the current definitions and patches, and compares its hash with
+the recorded one. It removes the build directory of:
+
+ * the packages no longer enabled;
+ * the packages that would be built differently: for example, after
+   enabling +openssl+, +ntp+ is rebuilt, as it then depends on it and
+   is configured with OpenSSL support;
+ * the packages built against any of them.
+
+The files the removed packages installed in the target directory, in
+the _sysroot_ (+output/staging+) and in the host directory are removed
+too (with per-package directories, from the final directories, made of
+the per-package ones). Buildroot knows them from the list it makes of
+the files installed by each package, when it is installed
+(+.files-list.txt+, +.files-list-staging.txt+ and
++.files-list-host.txt+ in its build directory). A file also installed
+by a package that is not removed is kept. The packages still enabled
+are then rebuilt.
+
+The target directory is re-created instead, as with +make
+target-reinstall+, when a removed package has no file list. +make
+target-reinstall+ can also be used to get a target directory exactly
+made of what the packages install, e.g. when a file of a removed
+package was modified by a package that is not removed.
+
+The time penalty is around a few seconds, negligible compared to the
+time saved by not rebuilding from scratch.
+
+This does not detect everything:
+
+ * The files installed by a package, and their content, do not trigger
+   a rebuild: unlike OpenEmbedded/Yocto recipes, Buildroot packages do
+   not declare the files they install, so Buildroot can't tell which
+   package uses a file installed by itself or another one. Only the
+   dependencies of a package, and the way it is built, are compared.
+ * A change in the content of a file used by a package, other than its
+   patches (e.g. a configuration file), or in a host tool, is not
+   detected.
+ * A package that finds an optional library in the _sysroot_ without
+   depending on it is not rebuilt when the library is added or
+   removed.
+
+Packages built before the option was enabled have no record, and are
+not checked until they are rebuilt. Any change made by hand in the
+build directory of a removed package is lost.
+
 [[rebuild-pkg]]
 === Understanding how to rebuild packages
 

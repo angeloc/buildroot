@@ -838,6 +838,32 @@ config BR2_REBUILD_CHANGED_PACKAGES
 	  With 'make V=1', the text is also kept, in
 	  .stamp_build_record.verbose.
 
+	  At each 'make', before building anything, the records are
+	  compared with the current definitions, and are removed:
+
+	    - the packages that are no longer enabled;
+
+	    - the packages that would be built differently, for
+	      example because an option of the package, an optional
+	      dependency or the compiler flags changed;
+
+	    - the packages built against any of them.
+
+	  The files the removed packages installed are removed from the
+	  target, staging and host directories, using the list of the
+	  files installed by each package that Buildroot makes when it
+	  is installed. The packages still enabled are then rebuilt. The
+	  target directory is re-created instead when a removed package
+	  has no such list.
+
+	  The files installed by a package, and their content, do not
+	  trigger a rebuild: Buildroot packages do not declare the files
+	  they install, so Buildroot can't tell which package uses a
+	  file installed by itself or another one.
+
+	  Any change made by hand in the build directory of a removed
+	  package is lost.
+
 endmenu
 
 config BR2_TIME_BITS_64

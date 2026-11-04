@@ -262,6 +262,7 @@ F:	package/sshguard/
 F:	package/sunwait/
 F:	package/sysdig/
 F:	package/uthash/
+F:	support/scripts/remove-packages
 F:	support/testing/tests/core/test_target_reinstall.py
 
 N:	Andy Shevchenko <andy.shevchenko@gmail.com>
