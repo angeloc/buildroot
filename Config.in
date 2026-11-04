@@ -857,7 +857,8 @@ config BR2_REBUILD_CHANGED_PACKAGES
 	  has no such list.
 
 	  'make show-stale' lists the packages that the next 'make'
-	  rebuilds, and those it removes.
+	  rebuilds, and those it removes. 'make <pkg>-remove' removes a
+	  package and the packages built against it.
 
 	  The files installed by a package, and their content, do not
 	  trigger a rebuild: Buildroot packages do not declare the files

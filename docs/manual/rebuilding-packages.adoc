@@ -166,6 +166,9 @@ V=1+: the text is then also kept in +.stamp_build_record.verbose+, and
 +make V=1 show-stale+ writes the current one in
 +.stamp_build_record.verbose.new+, next to it.
 
++make <package>-remove+ removes a given package and the packages built
+against it, and their files: the ones still enabled are rebuilt.
+
 This does not detect everything:
 
  * The files installed by a package, and their content, do not trigger
@@ -179,6 +182,9 @@ This does not detect everything:
  * A package that finds an optional library in the _sysroot_ without
    depending on it is not rebuilt when the library is added or
    removed.
+
+In these cases, +make <package>-remove+ can be used to remove a package
+and the packages built against it: those still enabled are rebuilt.
 
 Packages built before the option was enabled have no record, and are
 not checked until they are rebuilt. Any change made by hand in the

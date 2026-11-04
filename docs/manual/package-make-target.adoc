@@ -89,6 +89,11 @@ graphs.
 
 | +reinstall+       | Re-run the install commands
 
+| +remove+          | With +BR2_REBUILD_CHANGED_PACKAGES+, remove the package
+build directory and those of the packages built against it, and their
+files: the packages still enabled are rebuilt (see
+xref:rebuild-changed-packages[])
+
 | +rebuild+         | Re-run the compilation commands - this only makes
 sense when using the +OVERRIDE_SRCDIR+ feature or when you modified a file
 directly in the build directory
