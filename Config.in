@@ -856,6 +856,9 @@ config BR2_REBUILD_CHANGED_PACKAGES
 	  target directory is re-created instead when a removed package
 	  has no such list.
 
+	  'make show-stale' lists the packages that the next 'make'
+	  rebuilds, and those it removes.
+
 	  The files installed by a package, and their content, do not
 	  trigger a rebuild: Buildroot packages do not declare the files
 	  they install, so Buildroot can't tell which package uses a

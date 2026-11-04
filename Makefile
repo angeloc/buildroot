@@ -142,7 +142,8 @@ nobuild_targets := source %-source \
 	clean distclean help show-targets graph-depends \
 	%-graph-depends %-show-depends %-show-version \
 	graph-build graph-size list-defconfigs \
-	savedefconfig update-defconfig printvars show-vars show-info-all
+	savedefconfig update-defconfig printvars show-vars show-info-all \
+	show-stale
 ifeq ($(MAKECMDGOALS),)
 BR_BUILDING = y
 else ifneq ($(filter-out $(nobuild_targets),$(MAKECMDGOALS)),)
@@ -1052,14 +1053,17 @@ BUILD_RECORDS_CHANGED = \
 		$(foreach d,$(BUILD_RECORDS), \
 			$(if $(call build-record-changed,$(d)),$(BUILD_RECORD_NAME_$(d))))))
 
-# A build compares and removes them before anything else, while
-# parsing: in a recipe, the automatic variables of its target would be
-# used by the commands instead of those of the packages, and make could
-# already have looked at a stamp file of a removed package.
-ifeq ($(BR_BUILDING)$(filter-out all world,$(MAKECMDGOALS)),y)
+# Compare while parsing: in a recipe, the automatic variables of its
+# target would be used by the commands instead of those of the packages.
+ifneq ($(filter show-stale,$(MAKECMDGOALS))$(if $(filter-out all world,$(MAKECMDGOALS)),,$(BR_BUILDING)),)
 BUILD_RECORDS_HASHES := $(if $(BUILD_RECORDS),$(build-records-hash))
 BUILD_RECORDS_NOT_ENABLED := $(BUILD_RECORDS_NOT_ENABLED)
 BUILD_RECORDS_CHANGED := $(BUILD_RECORDS_CHANGED)
+endif
+
+# A build removes them before anything else, while parsing, so that no
+# stamp file of a removed package has been looked at yet.
+ifeq ($(BR_BUILDING)$(filter-out all world,$(MAKECMDGOALS)),y)
 ifneq ($(BUILD_RECORDS_NOT_ENABLED)$(BUILD_RECORDS_CHANGED),)
 ifneq ($(shell $(call remove-packages-cmd, \
 		--not-enabled "$(BUILD_RECORDS_NOT_ENABLED)" \
@@ -1243,6 +1247,16 @@ target-clean-for-reinstall:
 .PHONY: target-reinstall
 target-reinstall: target-clean-for-reinstall .WAIT all
 
+.PHONY: show-stale
+show-stale:
+ifeq ($(BR2_REBUILD_CHANGED_PACKAGES),y)
+	@$(REMOVE_PACKAGES) --dry-run \
+		--not-enabled "$(BUILD_RECORDS_NOT_ENABLED)" \
+		--changed "$(BUILD_RECORDS_CHANGED)"
+else
+	@echo "Enable BR2_REBUILD_CHANGED_PACKAGES to record how the packages are built."
+endif
+
 .PHONY: clean
 clean:
 	rm -rf $(BASE_TARGET_DIR) $(BINARIES_DIR) $(HOST_DIR) $(HOST_DIR_SYMLINK) \
@@ -1268,6 +1282,8 @@ help:
 	@echo '  toolchain              - build toolchain'
 	@echo '  sdk                    - build relocatable SDK'
 	@echo '  target-reinstall       - re-create the target directory, without rebuilding'
+	@echo '  show-stale             - list the packages the next build rebuilds or removes'
+	@echo '                           (with BR2_REBUILD_CHANGED_PACKAGES)'
 	@echo
 	@echo 'Configuration:'
 	@echo '  menuconfig             - interactive curses-based configurator'

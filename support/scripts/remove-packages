@@ -124,6 +124,8 @@ def main():
                         help="space-separated list of the packages no longer enabled")
     parser.add_argument("--changed", default="",
                         help="space-separated list of the packages whose configuration changed")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="only list the packages to rebuild and to remove")
     parser.add_argument("packages", nargs="*")
     args = parser.parse_args()
 
@@ -141,11 +143,29 @@ def main():
         roots[name] = "no longer enabled"
 
     removed = closure(records, {n: r for n, r in roots.items() if n in records})
+    rebuilt = sorted(n for n in removed if n in enabled)
+    gone = sorted(n for n in removed if n not in enabled)
     removed_builds = set(build for name in removed for build, _ in records[name])
     recreate_target = args.target_dir and without_target_list(removed_builds)
 
     def describe(name):
         return "%s (%s)" % (name, removed[name]) if removed[name] else name
+
+    if args.dry_run:
+        if not removed:
+            print("Nothing to rebuild or remove: every package was built as currently configured.")
+        if rebuilt:
+            print("Packages to rebuild:")
+            for name in rebuilt:
+                print("  " + describe(name))
+        if gone:
+            print("Packages to remove:")
+            for name in gone:
+                print("  " + describe(name))
+        if recreate_target:
+            print("The target directory will be re-created: no file list for %s."
+                  % " ".join(sorted(os.path.basename(b) for b in recreate_target)))
+        return 0
 
     if args.target_dir and not recreate_target:
         remove_listed_files(args.target_dir, ".files-list.txt", args.build_dir, removed_builds)
