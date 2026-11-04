@@ -816,6 +816,17 @@ config BR2_PER_PACKAGE_DIRECTORIES
 	  This is labeled as an experimental feature, as not all
 	  packages behave properly with per-package directories.
 
+config BR2_REBUILD_CHANGED_PACKAGES
+	bool "Rebuild the packages whose build configuration changed (experimental)"
+	help
+	  Record how each package is built, in the .stamp_build_record
+	  file of its build directory, to find the packages whose build
+	  configuration changed.
+
+	  This is labeled as an experimental feature, as a package may
+	  depend on inputs that are not recorded, and then not be
+	  rebuilt when they change.
+
 endmenu
 
 config BR2_TIME_BITS_64

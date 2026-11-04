@@ -86,6 +86,16 @@ if [ $MAKE_MAJOR -lt 3 ] || [ $MAKE_MAJOR -eq 3 -a $MAKE_MINOR -lt 81 ] ; then
 	exit 1;
 fi;
 
+# Recording how the packages are built needs sha256sum
+if grep -q ^BR2_REBUILD_CHANGED_PACKAGES=y "$BR2_CONFIG" ; then
+	if ! which sha256sum > /dev/null ; then
+		echo
+		echo "You must install 'sha256sum' on your build machine, for BR2_REBUILD_CHANGED_PACKAGES"
+		echo "  sha256sum is usually part of the coreutils package in your distribution"
+		exit 1;
+	fi
+fi
+
 # Check host gcc
 COMPILER=$(which $HOSTCC_NOCCACHE 2> /dev/null)
 if [ -z "$COMPILER" ] ; then

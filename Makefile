@@ -442,6 +442,7 @@ GNU_HOST_NAME := $(shell support/gnuconfig/config.guess)
 
 PACKAGES :=
 PACKAGES_ALL :=
+PACKAGES_VARS_ALL :=
 
 # silent mode requested?
 QUIET := $(if $(findstring s,$(filter-out --%,$(MAKEFLAGS))),-q)

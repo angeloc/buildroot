@@ -277,6 +277,7 @@ $(BUILD_DIR)/%/.stamp_configured:
 $(BUILD_DIR)/%/.stamp_built:
 	@$(call step_start,build)
 	@$(call MESSAGE,"Building")
+	$(if $(BR2_REBUILD_CHANGED_PACKAGES),$(call build-record-write,$(PKG),$(@D)))
 	$(foreach hook,$($(PKG)_PRE_BUILD_HOOKS),$(call $(hook))$(sep))
 	+$($(PKG)_BUILD_CMDS)
 	$(foreach hook,$($(PKG)_POST_BUILD_HOOKS),$(call $(hook))$(sep))
@@ -476,6 +477,7 @@ $$(error Package '$(1)' defined a second time in '$(pkgdir)'; \
 	previous definition was in '$$($(2)_PKGDIR)')
 endif
 PACKAGES_ALL += $(1)
+PACKAGES_VARS_ALL += $(2)
 
 # Define default values for various package-related variables, if not
 # already defined. For some variables (version, source, site and
