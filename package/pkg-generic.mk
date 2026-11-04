@@ -128,17 +128,22 @@ endef
 
 # $(1): base directory to search in
 # $(2): suffix of file (optional)
+# The list is only made after the package is configured, when the
+# snapshot taken then exists: when the package is just reinstalled, it
+# installs the same files, so its list is kept.
 define pkg_size_after
-	cd $(1); \
-	LC_ALL=C find . -not -path './$(STAGING_SUBDIR)/*' \( -type f -o -type l \) -printf '%T@:%i:%#m:%y:%s,%p\n' \
-		| LC_ALL=C sort > $($(PKG)_DIR)/.files-list$(2).after
-	LC_ALL=C comm -13 \
-		$($(PKG)_DIR)/.files-list$(2).before \
-		$($(PKG)_DIR)/.files-list$(2).after \
-		| sed -r -e 's/^[^,]+/$($(PKG)_NAME)/' \
-		> $($(PKG)_DIR)/.files-list$(2).txt
-	rm -f $($(PKG)_DIR)/.files-list$(2).before
-	rm -f $($(PKG)_DIR)/.files-list$(2).after
+	if [ -e $($(PKG)_DIR)/.files-list$(2).before ]; then \
+		cd $(1); \
+		LC_ALL=C find . -not -path './$(STAGING_SUBDIR)/*' \( -type f -o -type l \) -printf '%T@:%i:%#m:%y:%s,%p\n' \
+			| LC_ALL=C sort > $($(PKG)_DIR)/.files-list$(2).after; \
+		LC_ALL=C comm -13 \
+			$($(PKG)_DIR)/.files-list$(2).before \
+			$($(PKG)_DIR)/.files-list$(2).after \
+			| sed -r -e 's/^[^,]+/$($(PKG)_NAME)/' \
+			> $($(PKG)_DIR)/.files-list$(2).txt; \
+		rm -f $($(PKG)_DIR)/.files-list$(2).before \
+			$($(PKG)_DIR)/.files-list$(2).after; \
+	fi
 endef
 
 define check_bin_arch
