@@ -442,6 +442,7 @@ GNU_HOST_NAME := $(shell support/gnuconfig/config.guess)
 
 PACKAGES :=
 PACKAGES_ALL :=
+PACKAGES_VARS_ALL :=
 
 # silent mode requested?
 QUIET := $(if $(findstring s,$(filter-out --%,$(MAKEFLAGS))),-q)
@@ -975,6 +976,10 @@ TARGET_CLEAN_FOR_REINSTALL = \
 			[ -e "$${s}" ] || continue; \
 			rm -f "$${s}" "$${s%/*}/.stamp_installed"; \
 		done)
+
+ifeq ($(BR2_REBUILD_CHANGED_PACKAGES),y)
+SHA256SUM := $(shell which sha256sum || type -p sha256sum || echo sha256sum)
+endif # BR2_REBUILD_CHANGED_PACKAGES
 
 else # ifeq ($(BR2_HAVE_DOT_CONFIG),y)
 

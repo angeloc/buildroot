@@ -253,10 +253,88 @@ $(foreach dir,$(call qstrip,$(BR2_GLOBAL_PATCH_DIR)),\
 	$(if $(wildcard $(dir)),,\
 		$(error BR2_GLOBAL_PATCH_DIR contains nonexistent directory $(dir))))
 
+# Build records: when a package is configured, record in its build
+# directory (.stamp_build_record), as make variables, how it is built: the
+# hash of a text made of the definition of all its variables, verbatim,
+# its configure and build commands (with their hooks), expanded, so
+# that the global options they use (e.g. the compiler flags) are
+# recorded too, and the hashes of its patches; the names of its
+# variables and its dependencies. When BR2_REBUILD_CHANGED_PACKAGES is
+# enabled, the top-level Makefile compares the hash with the one of the
+# current definitions at each 'make', to find the packages to rebuild.
+
+# $(1): package variable prefix (e.g. NTP or HOST_NTP). Its variables are
+# the ones named after it, but those of the packages named after it (e.g.
+# perl-* for perl). Left out are the reverse dependencies, that other
+# packages append to, and the variables created while expanding recipes
+# (__X), that are not there when the records are compared.
+# Filter .VARIABLES one word at a time, to workaround a bug in make 4.3;
+# see https://savannah.gnu.org/bugs/?59093
+build-record-vars = \
+	$(sort $(filter-out $(addsuffix _%,$(filter $(1)_%,$(PACKAGES_VARS_ALL))) %_RDEPENDENCIES %__X, \
+		$(foreach X,$(.VARIABLES),$(filter $(1)_%,$(X)))))
+
+# $(1): package variable prefix. The patches applied from the package
+# and global patch directories (the downloaded ones are in its variables).
+build-record-patches = \
+	$(sort $(wildcard $(addsuffix /*.patch,$(call pkg-patches-dirs,$(1)))))
+
+# The variables that change the expansion of the commands, but not how
+# the package is built: verbosity, terminal, Buildroot git version. MAKE
+# and MAKE1, that depend on the -j option of the top-level make, are
+# replaced in the expanded commands, as MAKE can't be overridden.
+BUILD_RECORD_NEUTRAL_VARS = \
+	Q QUIET TERM_BOLD TERM_RESET BR2_VERSION_FULL SOURCE_DATE_EPOCH
+
+# $(1): package variable prefix
+build-record-cmds-expand = \
+	$(foreach s,CONFIGURE BUILD, \
+		$(foreach h,$($(1)_PRE_$(s)_HOOKS),$(call $(h))) \
+		$($(1)_$(s)_CMDS) \
+		$(foreach h,$($(1)_POST_$(s)_HOOKS),$(call $(h))))
+build-record-cmds = \
+	$(foreach v,$(BUILD_RECORD_NEUTRAL_VARS),$(eval __br_$(v) := $$($(v)))$(eval $(v) :=))$\
+	$(eval __br_cmds := $$(call build-record-cmds-expand,$(1)))$\
+	$(foreach v,$(BUILD_RECORD_NEUTRAL_VARS),$(eval $(v) := $$(__br_$(v))))$\
+	$(strip $(subst $(MAKE),_M,$(subst $(MAKE1),_M1,$(__br_cmds))))
+
+# $(1): its variables, $(2): its expanded configure and build commands
+build-record-text = \
+	$(foreach v,$(1),$(v) = $(value $(v))$(sep))$\
+	$(strip $(2))$(sep)
+
+# In debug mode (make V=1), the text is also kept, to be compared
+BUILD_RECORD_KEEP_TEXT = $(filter 1,$(KBUILD_VERBOSE))
+
+# $(1): package variable prefix, $(2): text, $(3): file where to keep it
+# in debug mode. The command printing the hash of the text, to which the
+# hashes of the patches of the package are added. The text is printed
+# with printf: make does not pass the newlines to the shell, so they are
+# given as \n, and the backslashes doubled.
+build-record-hash-cmd = \
+	{ printf '%b' '$(subst ','\'',$(subst $(sep),\n,$(subst \,\\,$(2))))'; \
+		$(if $(call build-record-patches,$(1)),$(SHA256SUM) $(call build-record-patches,$(1));) } | \
+	$(if $(BUILD_RECORD_KEEP_TEXT),tee $(3) |) \
+	$(SHA256SUM) | cut -d' ' -f1
+
+# $(1): package variable prefix, $(2): build directory
+define build-record-write
+	$(Q)printf '%s\n' \
+		'BUILD_RECORD_PKG_$(notdir $(2)) = $(1)' \
+		'BUILD_RECORD_NAME_$(notdir $(2)) = $($(1)_NAME)' \
+		'BUILD_RECORD_DEPS_$(notdir $(2)) = $($(1)_FINAL_DEPENDENCIES)' \
+		'BUILD_RECORD_VARS_$(notdir $(2)) = $(call build-record-vars,$(1))' \
+		"BUILD_RECORD_HASH_$(notdir $(2)) = $$($(call build-record-hash-cmd,$(1),$\
+			$(call build-record-text,$(call build-record-vars,$(1)),$(call build-record-cmds,$(1))),$\
+			$(2)/.stamp_build_record.verbose))" \
+		> $(2)/.stamp_build_record
+endef
+
 # Configure
 $(BUILD_DIR)/%/.stamp_configured:
 	@$(call step_start,configure)
 	@$(call MESSAGE,"Configuring")
+	$(if $(BR2_REBUILD_CHANGED_PACKAGES),$(call build-record-write,$(PKG),$(@D)))
 	$(Q)mkdir -p $(HOST_DIR) $(TARGET_DIR) $(STAGING_DIR) $(BINARIES_DIR)
 	$(call prepare-per-package-directory,$($(PKG)_FINAL_DEPENDENCIES))
 	$(foreach hook,$($(PKG)_POST_PREPARE_HOOKS),$(call $(hook))$(sep))
@@ -473,6 +551,7 @@ $$(error Package '$(1)' defined a second time in '$(pkgdir)'; \
 	previous definition was in '$$($(2)_PKGDIR)')
 endif
 PACKAGES_ALL += $(1)
+PACKAGES_VARS_ALL += $(2)
 
 # Define default values for various package-related variables, if not
 # already defined. For some variables (version, source, site and

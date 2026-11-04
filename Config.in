@@ -816,6 +816,28 @@ config BR2_PER_PACKAGE_DIRECTORIES
 	  This is labeled as an experimental feature, as not all
 	  packages behave properly with per-package directories.
 
+config BR2_REBUILD_CHANGED_PACKAGES
+	bool "Rebuild the packages whose build configuration changed"
+	help
+	  When a package is configured, record how it is built, as the
+	  hash of a text made of:
+
+	    - the definition of all its make variables (version,
+	      dependencies, configure and build options, commands,
+	      ...), verbatim, before expansion;
+
+	    - its configure and build commands, with their hooks,
+	      expanded as they are run, so with the options they get
+	      from other variables (e.g. the compiler flags);
+
+	    - the hashes of its patches.
+
+	  The SHA256 hash of this text, computed with the sha256sum
+	  tool of the host, and the packages it is built against, are
+	  kept in the .stamp_build_record file of its build directory.
+	  With 'make V=1', the text is also kept, in
+	  .stamp_build_record.verbose.
+
 endmenu
 
 config BR2_TIME_BITS_64
