@@ -1082,6 +1082,17 @@ $(1)-clean-for-reconfigure: $(1)-clean-for-rebuild
 
 $(1)-reconfigure:	$(1)-clean-for-reconfigure .WAIT $(1)
 
+ifeq ($(4)$(BR2_REBUILD_CHANGED_PACKAGES),targety)
+# Remove the build of the package and of the packages built against it,
+# and their files; those still enabled are rebuilt.
+$(1)-clean-for-remove:
+			$$(Q)$$(call remove-package-cmd,$(1))
+
+$(1)-remove:		$(1)-clean-for-remove .WAIT all
+
+.PHONY: $(1)-clean-for-remove $(1)-remove
+endif
+
 # define the PKG variable for all targets, containing the
 # uppercase package variable prefix
 $$($(2)_TARGET_INSTALL):		PKG=$(2)

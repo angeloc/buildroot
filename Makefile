@@ -1231,6 +1231,9 @@ help:
 	@echo '  <pkg>-reconfigure      - Restart the build from the configure step'
 	@echo '  <pkg>-rebuild          - Restart the build from the build step'
 	@echo '  <pkg>-reinstall        - Restart the build from the install step'
+	@echo '  <pkg>-remove           - Remove a target <pkg> and the packages built against'
+	@echo '                           it, and their files (with BR2_REBUILD_CHANGED_PACKAGES),'
+	@echo '                           rebuild those still enabled'
 	$(foreach p,$(HELP_PACKAGES), \
 		@echo $(sep) \
 		@echo '$($(p)_NAME):' $(sep) \

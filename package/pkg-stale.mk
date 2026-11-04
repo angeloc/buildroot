@@ -157,6 +157,12 @@ show-stale-cmd = \
 			$(call build-records-no-target-list,$(call build-records-builds,$(1)))).';) \
 	true
 
+# $(1): package name. Remove it, and the packages built against it.
+remove-package-cmd = \
+	$(if $(call build-records-builds,$(1)),$\
+		$(call remove-packages-cmd,$(call build-records-closure,$(1))),$\
+		echo '$(1): no build to remove.')
+
 # Compare while parsing: in a recipe, the automatic variables would be
 # those of the recipe, not of the packages.
 ifneq ($(filter show-stale,$(MAKECMDGOALS))$(BUILD_RECORDS_SYSTEM),)
