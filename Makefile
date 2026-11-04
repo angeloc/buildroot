@@ -975,6 +975,8 @@ TARGET_CLEAN_FOR_REINSTALL = \
 			rm -f "$${s}" "$${s%/*}/.stamp_installed"; \
 		done)
 
+include package/pkg-stale.mk
+
 else # ifeq ($(BR2_HAVE_DOT_CONFIG),y)
 
 # Some subdirectories are also package names. To avoid that "make linux"

@@ -819,9 +819,13 @@ config BR2_PER_PACKAGE_DIRECTORIES
 config BR2_REBUILD_CHANGED_PACKAGES
 	bool "Rebuild the packages whose build configuration changed (experimental)"
 	help
-	  Record how each package is built, in the .stamp_build_record
-	  file of its build directory, to find the packages whose build
-	  configuration changed.
+	  Record how each package is built and, at each build of the
+	  whole system, rebuild the packages whose build configuration
+	  changed and the packages built against them, and remove the
+	  packages no longer enabled, with their files.
+
+	  See the "Rebuilding the packages whose build configuration
+	  changed" section of the manual.
 
 	  This is labeled as an experimental feature, as a package may
 	  depend on inputs that are not recorded, and then not be

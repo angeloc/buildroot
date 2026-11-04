@@ -265,7 +265,7 @@ $(BUILD_DIR)/%/.stamp_configured:
 	$(foreach hook,$($(PKG)_POST_PREPARE_HOOKS),$(call $(hook))$(sep))
 	@$(call pkg_size_before,$(TARGET_DIR))
 	@$(call pkg_size_before,$(STAGING_DIR),-staging)
-	@$(call pkg_size_before,$(BINARIES_DIR),-images)
+	$(if $(filter YES,$($(PKG)_INSTALL_IMAGES)),@$(call pkg_size_before,$(BINARIES_DIR),-images))
 	@$(call pkg_size_before,$(HOST_DIR),-host)
 	$(foreach hook,$($(PKG)_PRE_CONFIGURE_HOOKS),$(call $(hook))$(sep))
 	$($(PKG)_CONFIGURE_CMDS)
@@ -390,7 +390,7 @@ $(BUILD_DIR)/%/.stamp_target_installed:
 $(BUILD_DIR)/%/.stamp_installed:
 	@$(call pkg_size_after,$(TARGET_DIR))
 	@$(call pkg_size_after,$(STAGING_DIR),-staging)
-	@$(call pkg_size_after,$(BINARIES_DIR),-images)
+	$(if $(filter YES,$($(PKG)_INSTALL_IMAGES)),@$(call pkg_size_after,$(BINARIES_DIR),-images))
 	@$(call pkg_size_after,$(HOST_DIR),-host)
 	@$(call check_bin_arch)
 	$(Q)touch $@

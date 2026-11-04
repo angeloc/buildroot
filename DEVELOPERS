@@ -249,6 +249,7 @@ F:	package/mono-gtksharp3/
 F:	package/monolite/
 F:	package/openjpeg/
 F:	package/pkg-build-record.mk
+F:	package/pkg-stale.mk
 F:	package/python-can/
 F:	package/python-minimalmodbus/
 F:	package/python-pillow/
