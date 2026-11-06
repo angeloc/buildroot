@@ -12,7 +12,8 @@ config BR2_PACKAGE_SETOOLS
 	help
 	  SETools is an open source project designed to facilitate
 	  SELinux policy analysis. The primary tools are:
-	   * apol - analyze a SELinux policy. (requires python-qt5)
+	   * apol - analyze a SELinux policy. (not installed, requires
+	     PyQt6)
 	   * sediff - semantic policy difference tool for SELinux.
 	   * sedta - Perform domain transition analyses
 	   * seinfoflow - information flow analysis for SELinux

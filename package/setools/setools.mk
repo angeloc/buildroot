@@ -30,18 +30,14 @@ define HOST_SETOOLS_FIX_SETUP
 endef
 HOST_SETOOLS_POST_PATCH_HOOKS += HOST_SETOOLS_FIX_SETUP
 
-# apol requires pyqt5. However, the setools installation
-# process will install apol even if pyqt5 is missing.
-# Remove these scripts from the target it pyqt5 is not selected.
-ifeq ($(BR2_PACKAGE_PYTHON_PYQT5),)
+# apol requires PyQt6, which is not available in Buildroot. However, the
+# setools installation process installs apol anyway, so remove it.
 define SETOOLS_REMOVE_QT_SCRIPTS
 	$(RM) $(TARGET_DIR)/usr/bin/apol
 	$(RM) -r $(TARGET_DIR)/lib/python$(PYTHON3_VERSION_MAJOR)/site-packages/setoolsgui/
 endef
 SETOOLS_POST_INSTALL_TARGET_HOOKS += SETOOLS_REMOVE_QT_SCRIPTS
-endif
 
-# pyqt5 is not a host-package, remove apol from the host directory.
 define HOST_SETOOLS_REMOVE_BROKEN_SCRIPTS
 	$(RM) $(HOST_DIR)/bin/apol
 endef
