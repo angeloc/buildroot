@@ -46,8 +46,8 @@ else
 LIBCAMERA_APPS_CONF_OPTS += -Denable_egl=disabled
 endif
 
-ifeq ($(BR2_PACKAGE_QT5),y)
-LIBCAMERA_APPS_DEPENDENCIES += qt5base
+ifeq ($(BR2_PACKAGE_QT6),y)
+LIBCAMERA_APPS_DEPENDENCIES += qt6base
 LIBCAMERA_APPS_CONF_OPTS += -Denable_qt=enabled
 else
 LIBCAMERA_APPS_CONF_OPTS += -Denable_qt=disabled
