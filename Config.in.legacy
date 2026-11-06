@@ -146,6 +146,13 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_QT5CINEX
+	bool "qt5cinex has been removed"
+	select BR2_LEGACY
+	help
+	  qt5cinex is a Qt5 demo application, and Qt5 is end of
+	  life: use its Qt6 port, BR2_PACKAGE_QT6CINEX, instead.
+
 config BR2_PACKAGE_QT_WEBKIT_KIOSK
 	bool "qt-webkit-kiosk has been removed"
 	select BR2_LEGACY
