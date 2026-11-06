@@ -371,7 +371,6 @@ def get_pkglist(trees, npackages, package_list):
                      "package/gstreamer/gstreamer.mk",
                      "package/gstreamer1/gstreamer1.mk",
                      "package/gtk2-themes/gtk2-themes.mk",
-                     "package/kf5/kf5.mk",
                      "package/kf6/kf6.mk",
                      "package/llvm-project/llvm-project.mk",
                      "package/matchbox/matchbox.mk",

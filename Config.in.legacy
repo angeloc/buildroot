@@ -146,6 +146,41 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_KF5
+	bool "KF5 has been removed"
+	select BR2_LEGACY
+	help
+	  The KDE Frameworks 5 only support Qt5, which is end of
+	  life: use BR2_PACKAGE_KF6 instead.
+
+config BR2_PACKAGE_KF5_EXTRA_CMAKE_MODULES
+	bool "kf5-extra-cmake-modules has been removed"
+	select BR2_LEGACY
+	help
+	  The KDE Frameworks 5 only support Qt5, which is end of
+	  life: use BR2_PACKAGE_KF6_EXTRA_CMAKE_MODULES instead.
+
+config BR2_PACKAGE_KF5_KCOREADDONS
+	bool "kf5-kcoreaddons has been removed"
+	select BR2_LEGACY
+	help
+	  The KDE Frameworks 5 only support Qt5, which is end of
+	  life: use BR2_PACKAGE_KF6_KCOREADDONS instead.
+
+config BR2_PACKAGE_KF5_MODEMMANAGER_QT
+	bool "kf5-modemmanager-qt has been removed"
+	select BR2_LEGACY
+	help
+	  The KDE Frameworks 5 only support Qt5, which is end of
+	  life: use BR2_PACKAGE_KF6_MODEMMANAGER_QT instead.
+
+config BR2_PACKAGE_KF5_NETWORKMANAGER_QT
+	bool "kf5-networkmanager-qt has been removed"
+	select BR2_LEGACY
+	help
+	  The KDE Frameworks 5 only support Qt5, which is end of
+	  life: use BR2_PACKAGE_KF6_NETWORKMANAGER_QT instead.
+
 config BR2_PACKAGE_QT5CINEX
 	bool "qt5cinex has been removed"
 	select BR2_LEGACY
