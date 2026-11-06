@@ -739,7 +739,6 @@ package/python-pylibftdi/0001-do-not-use-find-library.patch lib_patch.Upstream
 package/python-pyzmq/0001-detect.py-fix-the-ZMQ-version-check-to-the-ZMQ-versi.patch lib_patch.Upstream
 package/python-scipy/0001-build-sh4-FE.patch lib_patch.Upstream
 package/python-setuptools/0001-add-executable.patch lib_patch.Upstream
-package/python-sip/0001-remove-join-from-sip-h-files-string.patch lib_patch.Upstream
 package/python-web2py/S51web2py Shellcheck lib_sysv.Variables
 package/qt5/qt5base/0001-qtbase-Fix-build-error-when-using-EGL.patch lib_patch.Upstream
 package/qt5/qt5base/0002-double-conversion-enable-for-microblaze.patch lib_patch.Upstream
