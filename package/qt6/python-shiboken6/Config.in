@@ -1,0 +1,12 @@
+config BR2_PACKAGE_PYTHON_SHIBOKEN6
+	bool "python-shiboken6"
+	depends on BR2_PACKAGE_PYTHON3
+	depends on BR2_PACKAGE_QT6
+	depends on BR2_PACKAGE_LLVM_ARCH_SUPPORTS # host-clang
+	select BR2_PACKAGE_PYTHON3_ZLIB # embedded signature support
+	help
+	  Shiboken is the Python binding generator used by PySide6.
+	  This package provides the Shiboken6 Python module and
+	  library needed at runtime by the generated bindings.
+
+	  https://doc.qt.io/qtforpython-6/shiboken6/index.html
