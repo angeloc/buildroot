@@ -146,6 +146,13 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_PYTHON_PYQT5
+	bool "python-pyqt5 has been removed"
+	select BR2_LEGACY
+	help
+	  PyQt5 only supports Qt5, which is end of life: use the Qt6
+	  Python bindings, BR2_PACKAGE_PYTHON_PYSIDE6, instead.
+
 config BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_QMLGL
 	bool "gst1-plugins-good qmlgl (qt5) plugin has been removed"
 	select BR2_LEGACY
