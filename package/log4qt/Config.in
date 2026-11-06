@@ -1,6 +1,9 @@
 config BR2_PACKAGE_LOG4QT
 	bool "log4qt"
-	depends on BR2_PACKAGE_QT5
+	depends on BR2_PACKAGE_QT6
+	depends on BR2_TOOLCHAIN_GCC_AT_LEAST_11 # C++20, std::source_location
+	select BR2_HOST_CMAKE_AT_LEAST_3_28
+	select BR2_PACKAGE_QT6BASE_CONCURRENT
 	help
 	  Log4Qt is a C++ port of the Apache Software Foundation
 	  Log4j package using the Qt Framework. It is intended to be
@@ -8,5 +11,5 @@ config BR2_PACKAGE_LOG4QT
 
 	  https://github.com/MEONMedical/Log4Qt
 
-comment "log4qt needs qt5"
-	depends on !BR2_PACKAGE_QT5
+comment "log4qt needs qt6 and a toolchain w/ gcc >= 11"
+	depends on !BR2_PACKAGE_QT6 || !BR2_TOOLCHAIN_GCC_AT_LEAST_11
