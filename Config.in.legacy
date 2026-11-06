@@ -146,6 +146,14 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_GNURADIO_QTGUI
+	bool "gnuradio gr-qtgui has been removed"
+	select BR2_LEGACY
+	help
+	  gr-qtgui only supports Qt5, which is end of life, in the
+	  released gnuradio versions: Qt6 support is only available in
+	  the upstream development branch.
+
 config BR2_PACKAGE_OPENCV4_WITH_QT5
 	bool "opencv4 qt5 GUI toolkit has been removed"
 	select BR2_LEGACY
