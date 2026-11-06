@@ -10,7 +10,7 @@ EEPROM. The configuration is based on the
 ti-processor-sdk-06.01.00.08. Device tree blobs for beaglebone
 variants and the evm-sk are built too.
 
-For Qt5 support support use the beaglebone_qt5_defconfig.
+For Qt6 support use the beaglebone_qt5_defconfig.
 
 How to build it
 ===============
@@ -49,12 +49,12 @@ To copy the image file to the sdcard use dd:
 $ dd if=output/images/sdcard.img of=/dev/XXX
 
 
-Running Qt5 hellowindow opengl demo:
+Running the Qt6 openglwindow example:
 ===================
-# export QT_QPA_EGLFS_KMS_CONFIG=/etc/qt5/eglfs_kms_cfg.json
+# export QT_QPA_EGLFS_KMS_CONFIG=/etc/qt6/eglfs_kms_cfg.json
 # export QT_QPA_PLATFORM=eglfs
 # export QT_QPA_EGLFS_INTEGRATION=none
-# /usr/lib/qt/examples/opengl/hellowindow/hellowindow
+# /usr/examples/opengl/openglwindow/bin/openglwindow
 
 
 Tested hardware
