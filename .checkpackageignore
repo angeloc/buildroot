@@ -732,8 +732,6 @@ package/proxychains-ng/0001-add-configure-check-for-non-POSIX-compliant-getnamei
 package/ptpd/S65ptpd Shellcheck lib_sysv.Indent lib_sysv.Variables
 package/pulseaudio/0001-shm.c-use-_Static_assert-instead-of-static_assert-fo.patch lib_patch.Upstream
 package/pulseaudio/S50pulseaudio lib_sysv.ConsecutiveEmptyLines lib_sysv.EmptyLastLine lib_sysv.Indent lib_sysv.Variables
-package/pulseview/0001-Replace-obsolete-deprecated-Qt-methods.patch lib_patch.Upstream
-package/pulseview/0002-Fix-broken-build-due-to-C-template-behind-C-linkage.patch lib_patch.Upstream
 package/python-pybind/0001-pybind11-commands.py-support-STAGING_DIR.patch lib_patch.Upstream
 package/python-pylibftdi/0001-do-not-use-find-library.patch lib_patch.Upstream
 package/python-pyzmq/0001-detect.py-fix-the-ZMQ-version-check-to-the-ZMQ-versi.patch lib_patch.Upstream
