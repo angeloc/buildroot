@@ -60,12 +60,14 @@ else
 PINENTRY_CONF_OPTS += --disable-ncurses
 endif
 
-# pinentry-qt5 backend
-ifeq ($(BR2_PACKAGE_PINENTRY_QT5),y)
-PINENTRY_CONF_OPTS += --enable-pinentry-qt5
-PINENTRY_DEPENDENCIES += qt5base
-else
+# pinentry-qt backend, using Qt6: moc and rcc are searched in the
+# libexecdir of Qt6Core.pc, which is the target one
 PINENTRY_CONF_OPTS += --disable-pinentry-qt5
+ifeq ($(BR2_PACKAGE_PINENTRY_QT6),y)
+PINENTRY_CONF_OPTS += --enable-pinentry-qt
+PINENTRY_DEPENDENCIES += qt6base
+else
+PINENTRY_CONF_OPTS += --disable-pinentry-qt
 endif
 
 $(eval $(autotools-package))

@@ -6,7 +6,7 @@ menuconfig BR2_PACKAGE_PINENTRY
 	select BR2_PACKAGE_LIBGPG_ERROR
 	# At least one backend is needed to avoid build breakage
 	select BR2_PACKAGE_PINENTRY_NCURSES if \
-		!BR2_PACKAGE_PINENTRY_QT5
+		!BR2_PACKAGE_PINENTRY_QT6
 	help
 	  A collection of simple PIN or pass-phrase entry dialogs
 
@@ -45,27 +45,27 @@ config BR2_PACKAGE_PINENTRY_NCURSES
 	help
 	  The pinentry-ncurses tool
 
-config BR2_PACKAGE_PINENTRY_QT5
-	bool "pinentry-qt5"
-	depends on BR2_INSTALL_LIBSTDCPP
-	depends on BR2_USE_WCHAR
-	depends on BR2_TOOLCHAIN_HAS_THREADS_NPTL
-	depends on BR2_HOST_GCC_AT_LEAST_5
-	depends on BR2_TOOLCHAIN_GCC_AT_LEAST_5
-	depends on !BR2_ARM_CPU_ARMV4
-	depends on !BR2_arc
-	depends on !BR2_STATIC_LIBS
-	select BR2_PACKAGE_QT5
-	select BR2_PACKAGE_QT5BASE_GUI
-	select BR2_PACKAGE_QT5BASE_WIDGETS
+config BR2_PACKAGE_PINENTRY_QT6
+	bool "pinentry-qt"
+	depends on BR2_INSTALL_LIBSTDCPP # qt6
+	depends on BR2_TOOLCHAIN_GCC_AT_LEAST_8 # qt6
+	depends on BR2_HOST_GCC_AT_LEAST_8 # qt6
+	depends on BR2_PACKAGE_QT6_ARCH_SUPPORTS # qt6
+	depends on BR2_TOOLCHAIN_HAS_THREADS # qt6
+	depends on BR2_USE_WCHAR # qt6
+	depends on !BR2_STATIC_LIBS # qt6
+	depends on !BR2_PACKAGE_QT5 # qt6
+	select BR2_PACKAGE_QT6
+	select BR2_PACKAGE_QT6BASE_GUI
+	select BR2_PACKAGE_QT6BASE_WIDGETS
 	help
-	  The pinentry-qt5 tool
+	  The pinentry-qt tool, using Qt6
 
-comment "pinentry-qt5 needs a host gcc >= 5.0, and a toolchain w/ wchar, NPTL, gcc >= 5.0, C++, dynamic library"
-	depends on !BR2_arc
-	depends on !BR2_ARM_CPU_ARMV4
-	depends on !BR2_INSTALL_LIBSTDCPP || !BR2_USE_WCHAR || \
-		!BR2_TOOLCHAIN_HAS_THREADS_NPTL || !BR2_TOOLCHAIN_GCC_AT_LEAST_5 || \
-		BR2_STATIC_LIBS || !BR2_HOST_GCC_AT_LEAST_5
+comment "pinentry-qt needs a toolchain w/ C++, threads, wchar, dynamic library, gcc >= 8, host gcc >= 8"
+	depends on BR2_PACKAGE_QT6_ARCH_SUPPORTS
+	depends on !BR2_PACKAGE_QT5
+	depends on !BR2_INSTALL_LIBSTDCPP || !BR2_TOOLCHAIN_GCC_AT_LEAST_8 || \
+		!BR2_HOST_GCC_AT_LEAST_8 || !BR2_TOOLCHAIN_HAS_THREADS || \
+		!BR2_USE_WCHAR || BR2_STATIC_LIBS
 
 endif
