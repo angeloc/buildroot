@@ -4,17 +4,16 @@
 #
 ################################################################################
 
-CUTELYST_VERSION = 3.5.0
+CUTELYST_VERSION = 5.1.0
 CUTELYST_SITE = https://github.com/cutelyst/cutelyst/archive/v$(CUTELYST_VERSION)
 CUTELYST_INSTALL_STAGING = YES
 CUTELYST_SUPPORTS_IN_SOURCE_BUILD = NO
 CUTELYST_LICENSE = BSD-3-Clause
 CUTELYST_LICENSE_FILES = COPYING
-CUTELYST_DEPENDENCIES = qt5base
+CUTELYST_DEPENDENCIES = host-qt6tools qt6base
 
 CUTELYST_CONF_OPTS += \
-	-DPLUGIN_CSRFPROTECTION=ON \
-	-DPLUGIN_VIEW_GRANTLEE=OFF
+	-DPLUGIN_CSRFPROTECTION=ON
 
 # Qt 5.8 needs atomics, which on various architectures are in -latomic
 ifeq ($(BR2_TOOLCHAIN_HAS_LIBATOMIC),y)
