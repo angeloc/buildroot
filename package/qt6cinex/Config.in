@@ -1,0 +1,19 @@
+config BR2_PACKAGE_QT6CINEX
+	bool "qt6cinex"
+	depends on BR2_PACKAGE_QT6
+	depends on BR2_PACKAGE_QT6_GL_SUPPORTS
+	select BR2_PACKAGE_QT6BASE_GUI
+	select BR2_PACKAGE_QT6BASE_OPENGL
+	select BR2_PACKAGE_QT6DECLARATIVE
+	select BR2_PACKAGE_QT6DECLARATIVE_QUICK
+	select BR2_PACKAGE_QT6SHADERTOOLS
+	help
+	  Qt6 port of the Qt5 Cinematic Experience demo, showing some
+	  graphical features of Qt Quick: shader effects, particles
+	  and animations.
+
+	  https://github.com/alpqr/qt5-cinematic-experience
+
+comment "qt6cinex needs an OpenGL-capable backend"
+	depends on BR2_PACKAGE_QT6
+	depends on !BR2_PACKAGE_QT6_GL_SUPPORTS
