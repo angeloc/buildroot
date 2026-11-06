@@ -20,20 +20,11 @@
 #
 ################################################################################
 
-# Qt5 and Qt6 are mutually exclusive
-ifeq ($(BR2_PACKAGE_QT5),y)
-QT_VERSION_MAJOR = $(QT5_VERSION_MAJOR)
-QT_VERSION = $(QT5_VERSION)
-QT_BASE = qt5base
-QT_QMAKE = $(QT5_QMAKE)
-QT_CONF_FIXUP = QT5_QT_CONF_FIXUP
-else
 QT_VERSION_MAJOR = $(QT6_VERSION_MAJOR)
 QT_VERSION = $(QT6_VERSION)
 QT_BASE = qt6base
 QT_QMAKE = $(QT6_QMAKE)
 QT_CONF_FIXUP = QT6_QT_CONF_FIXUP
-endif
 
 #
 # Hook to sync Qt headers

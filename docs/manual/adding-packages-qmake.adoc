@@ -55,9 +55,8 @@ All the package metadata information variables that exist in the
 xref:generic-package-reference[generic package infrastructure] also
 exist in the QMake infrastructure.
 
-The Qt base package the package is built against, +qt5base+ or
-+qt6base+, is automatically added to its dependencies, depending on
-whether +BR2_PACKAGE_QT5+ or +BR2_PACKAGE_QT6+ is enabled.
+The Qt base package, +qt6base+, is automatically added to its
+dependencies.
 
 A few additional variables, specific to the QMake infrastructure, can
 also be defined.
