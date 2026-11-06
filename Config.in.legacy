@@ -146,6 +146,13 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_POPPLER_QT5
+	bool "poppler Qt5 support has been removed"
+	select BR2_LEGACY
+	help
+	  Qt5 is end of life and poppler now only supports Qt6: use
+	  BR2_PACKAGE_POPPLER_QT6 instead.
+
 config BR2_KERNEL_HEADERS_7_2
 	bool "kernel headers version 7.2.x are no longer supported"
 	select BR2_LEGACY

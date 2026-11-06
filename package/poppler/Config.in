@@ -15,14 +15,14 @@ config BR2_PACKAGE_POPPLER
 
 if BR2_PACKAGE_POPPLER
 
-config BR2_PACKAGE_POPPLER_QT5
-	bool "Qt5 support"
-	depends on BR2_PACKAGE_QT5
-	select BR2_PACKAGE_QT5BASE_GUI
-	select BR2_PACKAGE_QT5BASE_WIDGETS
-	select BR2_PACKAGE_QT5BASE_XML
+config BR2_PACKAGE_POPPLER_QT6
+	bool "Qt6 support"
+	depends on BR2_PACKAGE_QT6
+	select BR2_PACKAGE_QT6BASE_GUI
+	select BR2_PACKAGE_QT6BASE_WIDGETS
+	select BR2_PACKAGE_QT6BASE_TEST
 	help
-	  Build Qt support into the Poppler library
+	  Build Qt6 support into the Poppler library
 
 config BR2_PACKAGE_POPPLER_UTILS
 	bool "command line utils"
