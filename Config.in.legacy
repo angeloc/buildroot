@@ -146,6 +146,13 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_LIBMEDIAART_BACKEND_QT
+	bool "libmediaart Qt backend has been removed"
+	select BR2_LEGACY
+	help
+	  The libmediaart Qt backend only supports Qt5, which is end of
+	  life: the gdk-pixbuf backend is now always used.
+
 config BR2_PACKAGE_PINENTRY_QT5
 	bool "pinentry-qt5 has been removed"
 	select BR2_LEGACY
