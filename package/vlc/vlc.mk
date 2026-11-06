@@ -476,9 +476,17 @@ else
 VLC_CONF_OPTS += --disable-pulse
 endif
 
-ifeq ($(BR2_PACKAGE_QT5BASE_WIDGETS)$(BR2_PACKAGE_QT5SVG),yy)
+ifeq ($(BR2_PACKAGE_QT6BASE_WIDGETS)$(BR2_PACKAGE_QT6SVG),yy)
 VLC_CONF_OPTS += --enable-qt
-VLC_DEPENDENCIES += qt5base qt5svg
+# configure also runs "$(QMAKE6) -query", which doesn't accept -spec:
+# pass the spec through QMAKESPEC instead
+VLC_CONF_ENV += \
+	QMAKE6=$(HOST_DIR)/bin/qmake \
+	QMAKESPEC=devices/linux-buildroot-g++ \
+	MOC=$(HOST_DIR)/libexec/moc \
+	RCC=$(HOST_DIR)/libexec/rcc \
+	UIC=$(HOST_DIR)/libexec/uic
+VLC_DEPENDENCIES += qt6base qt6svg
 ifeq ($(BR2_PACKAGE_XLIB_LIBXEXT)$(BR2_PACKAGE_XLIB_LIBXINERAMA)$(BR2_PACKAGE_XLIB_LIBXPM),yyy)
 VLC_CONF_OPTS += --enable-skins2
 VLC_DEPENDENCIES += xlib_libXext xlib_libXinerama xlib_libXpm
