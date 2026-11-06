@@ -30,6 +30,12 @@ config BR2_PACKAGE_QT6BASE_DBUS
 	help
 	  This option enables the D-Bus module.
 
+config BR2_PACKAGE_QT6BASE_EXAMPLES
+	bool "examples"
+	help
+	  This option enables the Qt6 base examples, built for the
+	  enabled modules and installed in /usr/examples.
+
 config BR2_PACKAGE_QT6BASE_GUI
 	bool "gui module"
 	select BR2_PACKAGE_FREETYPE
