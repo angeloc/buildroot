@@ -1649,7 +1649,6 @@ F:	package/fxload/
 
 N:	Jérôme Oufella <jerome.oufella@savoirfairelinux.com>
 F:	package/libdri2/
-F:	package/qt-webkit-kiosk/
 
 N:	Jérôme Pouiller <jezz@sysmic.org>
 F:	package/apitrace/

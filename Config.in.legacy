@@ -146,6 +146,14 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_QT_WEBKIT_KIOSK
+	bool "qt-webkit-kiosk has been removed"
+	select BR2_LEGACY
+	help
+	  qt-webkit-kiosk needs QtWebKit, which only exists for Qt5,
+	  which is end of life. cog (BR2_PACKAGE_COG), based on WPE
+	  WebKit, can be used instead as a kiosk browser.
+
 config BR2_PACKAGE_QEXTSERIALPORT
 	bool "qextserialport has been removed"
 	select BR2_LEGACY
