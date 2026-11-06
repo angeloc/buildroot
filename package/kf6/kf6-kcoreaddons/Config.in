@@ -1,0 +1,16 @@
+config BR2_PACKAGE_KF6_KCOREADDONS
+	bool "kf6-kcoreaddons"
+	select BR2_PACKAGE_HOST_QT6TOOLS
+	select BR2_PACKAGE_HOST_QT6TOOLS_LINGUIST_TOOLS
+	select BR2_PACKAGE_KF6_EXTRA_CMAKE_MODULES
+	select BR2_PACKAGE_UTIL_LINUX
+	select BR2_PACKAGE_UTIL_LINUX_LIBMOUNT
+	help
+	  KF6 is a set of Qt framework addons, extending Qt in
+	  various ways, not only restricted in helping integration
+	  in KDE.
+
+	  This package contains KCoreAddons, a set of classes built
+	  on top of QtCore to perform various tasks.
+
+	  https://api.kde.org/kcoreaddons-index.html

@@ -10,6 +10,7 @@ menuconfig BR2_PACKAGE_KF6
 
 if BR2_PACKAGE_KF6
 source "package/kf6/kf6-extra-cmake-modules/Config.in"
+source "package/kf6/kf6-kcoreaddons/Config.in"
 endif
 
 comment "KF6 needs a toolchain w/ gcc >= 10"
