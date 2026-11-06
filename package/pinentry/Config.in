@@ -54,7 +54,6 @@ config BR2_PACKAGE_PINENTRY_QT6
 	depends on BR2_TOOLCHAIN_HAS_THREADS # qt6
 	depends on BR2_USE_WCHAR # qt6
 	depends on !BR2_STATIC_LIBS # qt6
-	depends on !BR2_PACKAGE_QT5 # qt6
 	select BR2_PACKAGE_QT6
 	select BR2_PACKAGE_QT6BASE_GUI
 	select BR2_PACKAGE_QT6BASE_WIDGETS
@@ -63,7 +62,6 @@ config BR2_PACKAGE_PINENTRY_QT6
 
 comment "pinentry-qt needs a toolchain w/ C++, threads, wchar, dynamic library, gcc >= 8, host gcc >= 8"
 	depends on BR2_PACKAGE_QT6_ARCH_SUPPORTS
-	depends on !BR2_PACKAGE_QT5
 	depends on !BR2_INSTALL_LIBSTDCPP || !BR2_TOOLCHAIN_GCC_AT_LEAST_8 || \
 		!BR2_HOST_GCC_AT_LEAST_8 || !BR2_TOOLCHAIN_HAS_THREADS || \
 		!BR2_USE_WCHAR || BR2_STATIC_LIBS

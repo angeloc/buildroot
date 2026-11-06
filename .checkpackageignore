@@ -738,24 +738,6 @@ package/python-pyzmq/0001-detect.py-fix-the-ZMQ-version-check-to-the-ZMQ-versi.p
 package/python-scipy/0001-build-sh4-FE.patch lib_patch.Upstream
 package/python-setuptools/0001-add-executable.patch lib_patch.Upstream
 package/python-web2py/S51web2py Shellcheck lib_sysv.Variables
-package/qt5/qt5base/0001-qtbase-Fix-build-error-when-using-EGL.patch lib_patch.Upstream
-package/qt5/qt5base/0002-double-conversion-enable-for-microblaze.patch lib_patch.Upstream
-package/qt5/qt5base/0005-eglfs-avoid-breaking-compilation-for-obscure-EGLNativeDisplayType-types.patch lib_patch.Upstream
-package/qt5/qt5base/0008-eglconvenience-add-missing-QList-include.patch lib_patch.Upstream
-package/qt5/qt5declarative/0001-qsgtexture-fix-debug-build-with-uclibc.patch lib_patch.Upstream
-package/qt5/qt5declarative/0002-qv4regexp_p-needs-c-limits-include-instead-of-plain-.patch lib_patch.Upstream
-package/qt5/qt5enginio/0001-Do-not-use-deprecated-QLinkedList.patch lib_patch.Upstream
-package/qt5/qt5location/0001-3rdparty-mapbox-gl-native-fix-musl-compile-pthread_g.patch lib_patch.Upstream
-package/qt5/qt5script/0001-Detect-32-bits-armv8-a-architecture.patch lib_patch.Upstream
-package/qt5/qt5tools/0001-Disable-designer-tool-fixes-configure-error.patch lib_patch.Upstream
-package/qt5/qt5webengine-chromium/0001-Don-t-rebase-sysroot-path.patch lib_patch.Upstream
-package/qt5/qt5webengine/0001-gn.pro-don-t-link-statically-with-libstc.patch lib_patch.Upstream
-package/qt5/qt5webkit/0001-WinCairo-PlayStation-ICU-68.1-no-longer-exposes-FALS.patch lib_patch.Upstream
-package/qt5/qt5webkit/0002-Fix-compilation-with-Python-3.9-avoid-passing-encodi.patch lib_patch.Upstream
-package/qt5/qt5webkit/0003-Let-Bison-generate-the-header-directly-to-fix-build-.patch lib_patch.Upstream
-package/qt5/qt5webkit/0004-Remove-invalid-g_object-declarations-to-fix-build-wi.patch lib_patch.Upstream
-package/qt5/qt5webkit/0005-Add-support-for-ARC-processors.patch lib_patch.Upstream
-package/qt5/qt5webkit/0006-Warnings-due-to-AppSinkCallbacks-struct-growth-https.patch lib_patch.Upstream
 package/rapidxml/0001-ensure-internal-print-operations-are-declared-before.patch lib_patch.Upstream
 package/read-edid/0001-Fix-install-file-list.patch lib_patch.Upstream
 package/read-edid/0002-Fix-compiler-check.patch lib_patch.Upstream

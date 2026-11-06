@@ -381,9 +381,8 @@ comment "Graphic libraries"
 	source "package/vulkan-tools/Config.in"
 
 comment "Other GUIs"
-	source "package/qt5/Config.in"
 	source "package/qt6/Config.in"
-if BR2_PACKAGE_QT5 || BR2_PACKAGE_QT6
+if BR2_PACKAGE_QT6
 comment "QT libraries and helper libraries"
 	source "package/cutelyst/Config.in"
 	source "package/grantlee/Config.in"

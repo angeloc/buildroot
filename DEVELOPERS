@@ -202,7 +202,6 @@ N:	Andreas Naumann <dev@andin.de>
 F:	package/evemu/
 F:	package/libevdev/
 F:	package/pkg-qmake.mk
-F:	package/qt5/qt5opcua/
 F:	package/qt6/qt6opcua/
 
 N:	Andreas Ziegler <br025@umbiko.net>
@@ -255,9 +254,6 @@ F:	package/python-pydal/
 F:	package/python-spidev/
 F:	package/python-web2py/
 F:	package/qpdf/
-F:	package/qt5/qt5coap/
-F:	package/qt5/qt5knx/
-F:	package/qt5/qt5mqtt/
 F:	package/qt6/
 F:	package/qt6cinex/
 F:	package/rtl8723ds/
@@ -344,8 +340,6 @@ F:	package/log4qt/
 F:	package/python-esptool/
 F:	package/python-pyaes/
 F:	package/ttyd/
-F:	package/qt5/qt5scxml/
-F:	package/qt5/qt5webview/
 
 N:	Baruch Siach <baruch@tkos.co.il>
 F:	board/solidrun/clearfog_gt_8k/
@@ -1352,7 +1346,6 @@ F:	package/nfs-utils/
 F:	package/putty/
 F:	package/python-libconf/
 F:	package/python-uvloop/
-F:	package/qt5/
 F:	package/rockchip-mali/
 F:	package/rpcbind/
 F:	package/rtl8188eu/
@@ -1805,9 +1798,6 @@ F:	package/sentry-native/
 F:	package/unclutter-xfixes/
 F:	package/virglrenderer/
 F:	support/testing/tests/package/test_virglrenderer.py
-
-N:	Joshua Henderson <joshua.henderson@microchip.com>
-F:	package/qt5/qt5wayland/
 
 N:	Juha Rantanen <juha@codercoded.com>
 F:	package/acsccid/
@@ -2763,7 +2753,6 @@ N:	Peter Seiderer <ps.report@gmx.net>
 F:	package/dotconf/
 F:	package/fft-eval/
 F:	package/python-blinker/
-F:	package/qt5/qt5speech/
 F:	package/speechd/
 
 N:	Peter Thompson <peter.macleod.thompson@gmail.com>
@@ -3044,7 +3033,6 @@ F:	package/nxp-mwifiex/
 F:	package/mmc-utils/
 F:	package/python-flask-jsonrpc/
 F:	package/python-flask-login/
-F:	package/qt5/qt5charts/
 F:	package/wlr-randr/
 
 N:	Semyon Kolganov <semenak94@mail.ru>
@@ -3636,7 +3624,6 @@ F:	package/python*
 F:	package/ser2net/
 F:	package/socketcand/
 F:	package/swig/
-F:	package/qt5/qt5serialbus/
 F:	package/sdparm/
 F:	package/ti-utils/
 F:	package/wpa_supplicant/

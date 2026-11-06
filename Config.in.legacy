@@ -146,6 +146,13 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_QT5
+	bool "Qt5 has been removed"
+	select BR2_LEGACY
+	help
+	  Qt5 is end of life and has been removed: use Qt6
+	  (BR2_PACKAGE_QT6) instead.
+
 config BR2_PACKAGE_PYTHON_SIP
 	bool "python-sip has been removed"
 	select BR2_LEGACY
