@@ -238,6 +238,7 @@ F:	package/httpdate/
 F:	package/i2c-tools/
 F:	package/imagemagick/
 F:	package/jq/
+F:	package/kf6/
 F:	package/libapparmor/
 F:	package/libb64/
 F:	package/libdill/

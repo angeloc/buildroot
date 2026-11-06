@@ -1,0 +1,17 @@
+menuconfig BR2_PACKAGE_KF6
+	bool "KF6"
+	depends on BR2_PACKAGE_QT6
+	depends on BR2_TOOLCHAIN_GCC_AT_LEAST_10 # C++20
+	help
+	  This option enables the KF6 KDE Frameworks. Sub-options
+	  allow to select which modules should be built.
+
+	  https://develop.kde.org/products/frameworks/
+
+if BR2_PACKAGE_KF6
+source "package/kf6/kf6-extra-cmake-modules/Config.in"
+endif
+
+comment "KF6 needs a toolchain w/ gcc >= 10"
+	depends on BR2_PACKAGE_QT6
+	depends on !BR2_TOOLCHAIN_GCC_AT_LEAST_10

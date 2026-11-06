@@ -1,0 +1,8 @@
+# From https://download.kde.org/stable/frameworks/6.31/extra-cmake-modules-6.31.0.tar.xz.sha256
+sha256  8f74af329e4c918358bfe54316f8cf4d530c28444595a3e2fb15075f72877f17  extra-cmake-modules-6.31.0.tar.xz
+
+# Hash for license files
+sha256  fd38b2c053c0cce46d9c5ef3545a6e34d157a240ba99c9b8dca5d37a8147da6c  LICENSES/BSD-2-Clause.txt
+sha256  e11af671c491efac2f94c1d752bea92f4308ca2450c7d11e582e4b48c40e4de1  LICENSES/BSD-3-Clause.txt
+sha256  a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499  LICENSES/CC0-1.0.txt
+sha256  8f25018489d6fe0dec34a352314c38dc146247b7de65735790f4398a92afa84b  LICENSES/MIT.txt
