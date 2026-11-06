@@ -146,6 +146,14 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_QMLGL
+	bool "gst1-plugins-good qmlgl (qt5) plugin has been removed"
+	select BR2_LEGACY
+	help
+	  Qt5 is end of life: the Qt5 qmlgl plugin is replaced by the
+	  Qt6 qml6 plugin, BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_QML6,
+	  whose elements are named qml6glsrc, qml6glsink, etc.
+
 config BR2_PACKAGE_KF5
 	bool "KF5 has been removed"
 	select BR2_LEGACY

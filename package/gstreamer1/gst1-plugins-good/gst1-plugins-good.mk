@@ -361,14 +361,18 @@ else
 GST1_PLUGINS_GOOD_CONF_OPTS += -Doss4=disabled
 endif
 
-ifeq ($(BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_QMLGL),y)
-GST1_PLUGINS_GOOD_CONF_OPTS += -Dqt5=enabled
-GST1_PLUGINS_GOOD_DEPENDENCIES += qt5declarative qt5tools
-ifeq ($(BR2_PACKAGE_QT5BASE_XCB),y)
-GST1_PLUGINS_GOOD_DEPENDENCIES += qt5x11extras
-endif
-else
 GST1_PLUGINS_GOOD_CONF_OPTS += -Dqt5=disabled
+
+ifeq ($(BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_QML6),y)
+GST1_PLUGINS_GOOD_CONF_OPTS += -Dqt6=enabled -Dqt-method=pkg-config
+GST1_PLUGINS_GOOD_DEPENDENCIES += \
+	host-qt6tools \
+	qt6base \
+	qt6declarative \
+	qt6shadertools \
+	$(if $(BR2_PACKAGE_QT6WAYLAND),qt6wayland)
+else
+GST1_PLUGINS_GOOD_CONF_OPTS += -Dqt6=disabled
 endif
 
 ifeq ($(BR2_PACKAGE_GST1_PLUGINS_GOOD_PLUGIN_SHOUT2),y)
