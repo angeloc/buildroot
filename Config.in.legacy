@@ -146,6 +146,14 @@ endif
 
 comment "Legacy options removed in 2026.11"
 
+config BR2_PACKAGE_QEXTSERIALPORT
+	bool "qextserialport has been removed"
+	select BR2_LEGACY
+	help
+	  qextserialport is unmaintained and only supports Qt5,
+	  which is end of life. Use the Qt6 serialport module
+	  (BR2_PACKAGE_QT6SERIALPORT) instead.
+
 config BR2_PACKAGE_LIBMEDIAART_BACKEND_QT
 	bool "libmediaart Qt backend has been removed"
 	select BR2_LEGACY

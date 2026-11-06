@@ -3342,7 +3342,6 @@ F:	package/python-pyfatfs/
 F:	package/python-qrcode/
 F:	package/python-serial/
 F:	package/python-unittest-xml-reporting/
-F:	package/qextserialport/
 F:	package/qt6/
 F:	package/riscv64-elf-toolchain/
 F:	package/rpcbind/
