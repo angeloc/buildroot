@@ -77,11 +77,11 @@ Running kmscube application:
 
 # kmscube
 
-Running Qt5 Cinematic Demo:
+Running the Qt6 Cinematic Experience demo:
 
 # export QT_QPA_EGLFS_KMS_CONFIG=/root/sabresd.json
 # export QT_QPA_EGLFS_ALWAYS_SET_MODE=1
-# /usr/share/Qt5/CinematicExperience/Qt5_CinematicExperience
+# CinematicExperience-demo
 
 Running gl2mark benchmark:
 
