@@ -1,0 +1,14 @@
+config BR2_PACKAGE_KF6_MODEMMANAGER_QT
+	bool "kf6-modemmanager-qt"
+	depends on BR2_PACKAGE_MODEM_MANAGER
+	select BR2_PACKAGE_KF6_EXTRA_CMAKE_MODULES
+	select BR2_PACKAGE_QT6BASE_DBUS
+	select BR2_PACKAGE_QT6BASE_XML
+	help
+	  KF6 is a set of Qt framework addons, extending Qt in various
+	  ways, not only restricted in helping integration in KDE.
+
+	  This package contains the ModemManager Qt6 bindings from the
+	  KF6 project.
+
+	  https://api.kde.org/modemmanager-qt-index.html
