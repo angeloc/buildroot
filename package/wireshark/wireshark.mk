@@ -41,8 +41,13 @@ WIRESHARK_CONF_OPTS += -DENABLE_LTO=OFF
 endif
 
 ifeq ($(BR2_PACKAGE_WIRESHARK_GUI),y)
-WIRESHARK_CONF_OPTS += -DBUILD_wireshark=ON -DUSE_qt6=OFF
-WIRESHARK_DEPENDENCIES += qt5base qt5multimedia qt5svg qt5tools
+WIRESHARK_CONF_OPTS += -DBUILD_wireshark=ON -DUSE_qt6=ON
+WIRESHARK_DEPENDENCIES += \
+	host-qt6tools \
+	qt6base \
+	qt6core5compat \
+	qt6multimedia \
+	qt6svg
 else
 WIRESHARK_CONF_OPTS += -DBUILD_wireshark=OFF
 endif
