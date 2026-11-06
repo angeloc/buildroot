@@ -450,5 +450,20 @@ QT6BASE_PRE_CONFIGURE_HOOKS += QT6BASE_MAKE_BR_SPEC
 
 QT6BASE_POST_INSTALL_STAGING_HOOKS += QT6_INSTALL_QT_CONF
 
+# The bindir and libexecdir variables of the Qt6Core pkg-config file are
+# used to find the Qt6 tools (moc, rcc, uic...), by meson or configure
+# scripts for example. They give the target directories, which are
+# useless when cross-compiling, and are even looked for on the build
+# machine as pkg-config doesn't prefix variables with the sysroot: make
+# them point to the host tools, relative to the pkg-config file so that
+# it works with per-package directories and in a relocated SDK.
+define QT6BASE_PKGCONFIG_HOST_TOOLS
+	hostdir=$$(realpath -m --relative-to=$(STAGING_DIR)/usr/lib/pkgconfig $(HOST_DIR)) && \
+	$(SED) "s%^bindir=.*%bindir=\$${pcfiledir}/$${hostdir}/bin%" \
+		-e "s%^libexecdir=.*%libexecdir=\$${pcfiledir}/$${hostdir}/libexec%" \
+		$(STAGING_DIR)/usr/lib/pkgconfig/Qt6Core.pc
+endef
+QT6BASE_POST_INSTALL_STAGING_HOOKS += QT6BASE_PKGCONFIG_HOST_TOOLS
+
 $(eval $(cmake-package))
 $(eval $(host-cmake-package))
