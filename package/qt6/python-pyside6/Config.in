@@ -1,0 +1,33 @@
+config BR2_PACKAGE_PYTHON_PYSIDE6
+	bool "python-pyside6"
+	depends on BR2_PACKAGE_PYTHON3
+	depends on BR2_PACKAGE_QT6
+	depends on BR2_PACKAGE_QT6_GL_SUPPORTS # QtGui OpenGL classes
+	depends on BR2_PACKAGE_LLVM_ARCH_SUPPORTS # python-shiboken6
+	select BR2_PACKAGE_PYTHON_SHIBOKEN6
+	select BR2_PACKAGE_QT6BASE_GUI
+	select BR2_PACKAGE_QT6BASE_OPENGL
+	select BR2_PACKAGE_QT6BASE_WIDGETS
+	select BR2_PACKAGE_OPENSSL if BR2_PACKAGE_QT6BASE_NETWORK # QtNetwork SSL classes
+	help
+	  Qt for Python, the official Python bindings of Qt6.
+
+	  The bindings are built for the Qt6 modules enabled in the
+	  configuration.
+
+	  Select a Qt platform plugin with
+	  BR2_PACKAGE_QT6BASE_DEFAULT_QPA at build time, or with the
+	  QT_QPA_PLATFORM environment variable at run time.
+
+	  The pyside6-uic and pyside6-rcc tools are not provided: use
+	  "$(HOST_DIR)/libexec/uic -g python" and
+	  "$(HOST_DIR)/libexec/rcc -g python" instead to convert .ui
+	  and .qrc files to Python code.
+
+	  https://doc.qt.io/qtforpython-6/
+
+comment "python-pyside6 needs an OpenGL-capable backend"
+	depends on BR2_PACKAGE_PYTHON3
+	depends on BR2_PACKAGE_QT6
+	depends on BR2_PACKAGE_LLVM_ARCH_SUPPORTS
+	depends on !BR2_PACKAGE_QT6_GL_SUPPORTS
