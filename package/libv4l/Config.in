@@ -34,7 +34,8 @@ config BR2_PACKAGE_LIBV4L_UTILS
 	  - v4l2-ctl, cx18-ctl, ivtv-ctl
 	  - v4l2-sysfs-path
 	  - rds-ctl
-	  - qv4l2 (if Qt is enabled)
+	  - qv4l2 (if Qt6 with Gui, Widgets and Core5Compat is
+	    enabled)
 
 comment "v4l-utils tools needs a toolchain w/ C++11"
 	depends on !BR2_TOOLCHAIN_GCC_AT_LEAST_4_8
