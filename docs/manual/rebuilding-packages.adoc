@@ -322,6 +322,13 @@ The cache is never cleaned up. An entry (+<cache>/<package>/<key>+) is
 touched each time it is restored: the entries not used for a while can
 be removed with +find+ and its +-mtime+ option.
 
+With +BR2_PACKAGE_CACHE_VERIFY+, the packages found in the cache are
+built instead of restored, and the result of their build is compared
+with the cache: the differences are appended to
++package-cache-verify.txt+, in the output directory (remove it to start
+over). As most packages record the time they are built, use it with
++BR2_REPRODUCIBLE+.
+
 [[rebuild-pkg]]
 === Understanding how to rebuild packages
 

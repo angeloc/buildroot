@@ -860,6 +860,13 @@ config BR2_PACKAGE_CACHE_DIR
 	help
 	  Where the results of the builds of the packages are stored.
 
+config BR2_PACKAGE_CACHE_VERIFY
+	bool "Verify the package cache"
+	help
+	  Build the packages found in the cache instead of restoring
+	  them, and report the differences with the cache in
+	  package-cache-verify.txt, in the output directory.
+
 endif
 
 endmenu

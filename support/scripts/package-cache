@@ -166,6 +166,35 @@ def changes(args):
     return result
 
 
+def file_digest(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def describe(d, rel, paths, reloc):
+    """What an entry is, to compare two builds: its type, mode and content
+    (with the paths of the build replaced by their names in text files and
+    symbolic links)"""
+    p = os.path.join(d, rel)
+    st = os.lstat(p)
+    names = {n: "@%s@" % n for n in paths}
+    if stat.S_ISLNK(st.st_mode):
+        target = os.readlink(p)
+        if rel in reloc:
+            target = relocate(target.encode(), paths, names).decode()
+        return ("link", target)
+    if stat.S_ISDIR(st.st_mode):
+        return ("dir", stat.S_IMODE(st.st_mode))
+    if rel in reloc:
+        with open(p, "rb") as f:
+            data = relocate(f.read(), paths, names)
+        return ("file", stat.S_IMODE(st.st_mode), hashlib.sha256(data).hexdigest())
+    return ("file", stat.S_IMODE(st.st_mode), file_digest(p))
+
+
 def cmd_store(args):
     paths = parse_pairs(args.path)
     result = changes(args)
@@ -197,6 +226,8 @@ def cmd_store(args):
     pkgdir = os.path.join(args.cache_dir, args.name)
     entry = os.path.join(pkgdir, key)
 
+    if args.verify and os.path.isdir(entry):
+        return verify(args, entry, result, reloc, paths)
     if os.path.isdir(entry):
         return 0
 
@@ -221,6 +252,38 @@ def cmd_store(args):
             pass
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    return 0
+
+
+def verify(args, entry, result, reloc, paths):
+    """Compare the result of this build with the cached entry, extracted
+    in a temporary directory, and report the differences."""
+    with open(os.path.join(entry, "manifest.json")) as f:
+        manifest = json.load(f)
+    diffs = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for name, (d, changed, removed) in result.items():
+            cached = manifest["roots"].get(name, {"removed": [], "relocate": []})
+            root = os.path.join(tmp, name)
+            os.makedirs(root)
+            with tarfile.open(archive_path(entry, name)) as tar:
+                cached_changed = sorted(m.name for m in tar.getmembers())
+                tar.extractall(root, **extract_filter())
+            for r in sorted(set(changed) ^ set(cached_changed)):
+                diffs.append("%s/%s: %s" % (name, r, "only in this build" if r in changed
+                                            else "only in the cache"))
+            for r in sorted(set(changed) & set(cached_changed)):
+                if describe(d, r, paths, set(reloc[name])) != \
+                   describe(root, r, manifest["paths"], set(cached["relocate"])):
+                    diffs.append("%s/%s: differs" % (name, r))
+            if removed != cached["removed"]:
+                diffs.append("%s: removed entries differ" % name)
+    with open(args.verify, "a") as f:
+        for diff in diffs:
+            f.write("%s: %s\n" % (args.name, diff))
+    if diffs:
+        print("WARNING: %s: the build differs from the package cache (see %s)"
+              % (args.name, args.verify), file=sys.stderr)
     return 0
 
 
@@ -327,6 +390,7 @@ def main():
         p.add_argument("--key")
         p.add_argument("--snapshot")
         p.add_argument("--output")
+        p.add_argument("--verify", help="file where to report the differences")
     args = parser.parse_args()
     return {"snapshot": cmd_snapshot, "store": cmd_store,
             "lookup": cmd_lookup, "restore": cmd_restore}[args.cmd](args)

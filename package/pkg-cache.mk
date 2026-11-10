@@ -213,8 +213,9 @@ define pkg-cache-lookup
 		'$($(call UPPERCASE,$(d))_DIR)/.cache_key $(call pkg-cache-dep-key,$(d))') \
 		> $(2)/.cache_deps)
 	$(if $(__pkg_cache_key),$\
-		$(if $(shell $(PACKAGE_CACHE_SCRIPT) lookup $(call pkg-cache-args,$(1),$(__pkg_cache_key))),$\
-			$(eval __pkg_cache_hit := y)))
+		$(if $(BR2_PACKAGE_CACHE_VERIFY),,$\
+			$(if $(shell $(PACKAGE_CACHE_SCRIPT) lookup $(call pkg-cache-args,$(1),$(__pkg_cache_key))),$\
+				$(eval __pkg_cache_hit := y))))
 	$(eval __pkg_cache_nosources := $(and $(__pkg_cache_hit),$(PACKAGE_CACHE_SKIP_SOURCES),$\
 		$(call pkg-cache-sources-unneeded,$(1))))
 	$(if $(__pkg_cache_hit),$\
@@ -248,7 +249,8 @@ define pkg-cache-store
 	fi
 	$(Q)if [ -e $(2)/.cache_snapshot -a -e $(2)/.cache_key ]; then \
 		$(PACKAGE_CACHE_SCRIPT) store $(call pkg-cache-args,$(1),$$(cat $(2)/.cache_key)) \
-			$(PACKAGE_CACHE_ROOTS) --snapshot $(2)/.cache_snapshot && \
+			$(PACKAGE_CACHE_ROOTS) --snapshot $(2)/.cache_snapshot \
+			$(if $(BR2_PACKAGE_CACHE_VERIFY),--verify $(BASE_DIR)/package-cache-verify.txt) && \
 		rm -f $(2)/.cache_snapshot; \
 	fi
 endef
