@@ -222,6 +222,106 @@ Packages built before the option was enabled have no record, and are
 not checked until they are rebuilt. Any change made by hand in the
 build directory of a removed package is lost.
 
+[[package-cache]]
+==== Sharing the result of the builds of the packages
+
+.Note
+This feature is experimental.
+
+When +BR2_PACKAGE_CACHE+ is enabled (in +Build options+), the result of
+the build of each package is stored in a cache, in
++BR2_PACKAGE_CACHE_DIR+, shared by all the outputs of the machine.
+When a package is to be built the same way as a package in the cache,
+in another output or in the same one (e.g. after an option is enabled
+then disabled), it is restored instead: its download, extract, patch,
+configure and build steps are skipped, and its build and install steps
+restore it. Its sources are only downloaded, extracted and patched:
+
+ * for the targets that need them (+make legal-info+, +make source+,
+   +make <package>-source+, +make <package>-extract+ and +make
+   <package>-patch+);
+ * when its hooks run outside of its steps use its build directory
+   (e.g. +busybox+, whose configuration is read when the target
+   directory is finalized);
+ * when the hooks of its download, extract or patch steps write in the
+   host, _sysroot_, target or images directory (e.g. the external
+   toolchains, installed in the host directory when extracted);
+ * for a package with a configuration editor (e.g. +make
+   <package>-menuconfig+): its configuration is made from its sources.
+
+Its key is computed when it is downloaded: the packages it is built
+against are downloaded before it.
+
+The package cache needs per-package directories
+(+BR2_PER_PACKAGE_DIRECTORIES+): without them, a package may find, and
+use, a library installed by a package it does not depend on, which its
+key does not cover. It also needs +python3+ (3.7 or later) on the host.
+
+The result of the build of a package is what it adds, changes and
+removes in its host, _sysroot_ and target directories, from when it is
+configured to when it is installed. Its key is the SHA256 hash of:
+
+ * its build record (see xref:rebuild-changed-packages[]), where the
+   paths of the output, host, download, Buildroot, br2-external and
+   ccache directories are replaced by their names;
+ * the files of Buildroot used to build all the packages: its top-level
+   makefiles and +Config.in+ files, the +arch+, +system+ and +support+
+   directories (except the tests), and the infrastructures of the packages
+   and toolchains;
+ * the host system: its architecture and distribution, the version of
+   its compilers, linker, C library, Python, Perl, make and tar, and of
+   cmake when the one of the host is used; with +BR2_REPRODUCIBLE+, the
+   date recorded in the files (+SOURCE_DATE_EPOCH+);
+ * the keys of the packages it is built against.
+
+When a package is restored in another output, the paths of the output,
+host, download, Buildroot, br2-external and ccache directories are
+replaced in its text files (e.g. libtool +.la+ or pkg-config files) and symbolic links.
+When the result of a package contains them in a binary file (e.g. the
+RPATH of a host tool, or the toolchain wrapper with
++BR2_REPRODUCIBLE+), it is only restored where these directories are
+the same. It is not restored where one of the directories its text files
+contain does not exist (e.g. a br2-external tree that is not used).
+
+Some packages are not cached, nor the packages built against them, as
+the result of their build may not be known: the packages whose sources
+are local (+FOO_SITE_METHOD = local+) or overridden
+(+FOO_OVERRIDE_SRCDIR+), or not checked with a hash; the packages
+installing or referring to images (+BINARIES_DIR+), as the packages are
+installed there in parallel; the packages whose build directory is used
+by other packages (e.g. +linux+, for the kernel modules); the packages
+rebuilt with +make <package>-rebuild+ or +make <package>-reconfigure+,
+or configured with +make <package>-menuconfig+ (or another configuration
+editor), as their build directory may have been modified by hand. When a package
+is enabled after a package whose build directory it uses was restored,
+the build stops, asking to remove that build directory. A package is not
+stored when a package it is built against was rebuilt by hand after its
+key was computed.
+
++make <package>-reinstall+ looks a restored package up again, with its
+current definitions. +make <package>-rebuild+ and +make
+<package>-reconfigure+ build a restored package from its sources. +make
+target-reinstall+ restores the target directory of the restored
+packages again.
+
+An input of a package that its build record does not cover (see the
+limits in xref:rebuild-changed-packages[], e.g. a file it uses through a
+path made of other variables) is not in its key either: when it
+changes, the package is restored as it was built, even after +make
+<package>-dirclean+ or in a new output. To build it again, use +make
+<package>-rebuild+ (the package is then neither restored nor stored any
+more, until its build directory is removed), or remove its entries from
+the cache (+<cache>/<package>+).
+
+The result of each package is stored compressed with zstd when the
++python3+ of the host is 3.14 or later, else with gzip. A host with an
+older +python3+ does not restore the entries compressed with zstd: it
+builds these packages instead.
+
+The cache is never cleaned up. An entry (+<cache>/<package>/<key>+) is
+touched each time it is restored: the entries not used for a while can
+be removed with +find+ and its +-mtime+ option.
+
 [[rebuild-pkg]]
 === Understanding how to rebuild packages
 

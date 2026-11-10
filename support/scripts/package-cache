@@ -1,0 +1,336 @@
+#!/usr/bin/env python3
+
+# Store the result of the build of a package in the package cache, and
+# restore it in another build (see BR2_PACKAGE_CACHE).
+#
+# The result of a package is what its build changed in its per-package
+# host, staging and target directories (the roots): the entries (files,
+# symbolic links and directories) it added or changed, and those it
+# removed, found by comparing a snapshot taken before it is configured
+# with the state after it is installed.
+#
+# An entry of the cache, <cache>/<package>/<key>, holds a tarball of the
+# added or changed entries of each root, and a manifest with the removed
+# entries and the text files and symbolic links that contain the paths of
+# the output, Buildroot, download and br2-external directories of the
+# build (e.g. libtool or pkg-config files), to replace them when
+# restored. When a binary file contains such a path, the entry can only
+# be restored where these directories are the same: its key includes
+# them.
+#
+# The tarballs are compressed with zstd, using one thread per CPU, with
+# Python 3.14 or later, else with gzip. An older Python does not restore
+# an entry compressed with zstd: it builds the package instead.
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import stat
+import sys
+import tarfile
+import tempfile
+
+try:
+    # Python 3.14 or later: zstd, compressed with one thread per CPU
+    from compression.zstd import CompressionParameter
+except ImportError:
+    CompressionParameter = None
+
+FORMAT = 1
+
+
+def archive_ext():
+    """The extension of the archives this Python writes"""
+    return ".tar.zst" if CompressionParameter else ".tar.gz"
+
+
+def archive_open_write(path):
+    if CompressionParameter:
+        return tarfile.open(path, "w:zst", format=tarfile.PAX_FORMAT,
+                            options={CompressionParameter.compression_level: 3,
+                                     CompressionParameter.nb_workers: os.cpu_count() or 1})
+    return tarfile.open(path, "w:gz", compresslevel=1, format=tarfile.PAX_FORMAT)
+
+
+def archive_path(entry, name):
+    """The archive of a root in an entry: zstd or gzip"""
+    for ext in (".tar.zst", ".tar.gz"):
+        p = os.path.join(entry, name + ext)
+        if os.path.exists(p):
+            return p
+    return os.path.join(entry, name + ".tar.gz")
+
+
+def readable(entry):
+    """Whether this Python can read the archives of an entry"""
+    return CompressionParameter or not any(f.endswith(".tar.zst") for f in os.listdir(entry))
+
+
+def parse_pairs(items):
+    pairs = {}
+    for item in items or []:
+        name, _, value = item.partition("=")
+        if not value:
+            continue
+        pairs[name] = os.path.normpath(value)
+    return pairs
+
+
+def walk(root, exclude):
+    """The entries of a root: path relative to it -> (type, mode, size,
+    mtime, inode, link target). The excluded subdirectory is left out."""
+    entries = {}
+    if not os.path.isdir(root):
+        return entries
+
+    def scan(path, rel):
+        with os.scandir(path) as it:
+            for e in it:
+                r = os.path.join(rel, e.name) if rel else e.name
+                if exclude and (r == exclude or r.startswith(exclude + "/")):
+                    continue
+                st = e.stat(follow_symlinks=False)
+                link = os.readlink(e.path) if stat.S_ISLNK(st.st_mode) else ""
+                entries[r] = [stat.S_IFMT(st.st_mode), stat.S_IMODE(st.st_mode),
+                              st.st_size, st.st_mtime_ns, st.st_ino, link]
+                if stat.S_ISDIR(st.st_mode):
+                    scan(e.path, r)
+    scan(root, "")
+    return entries
+
+
+def roots_of(args):
+    return parse_pairs(args.root), parse_pairs(args.exclude)
+
+
+def cmd_snapshot(args):
+    roots, exclude = roots_of(args)
+    snap = {name: walk(d, exclude.get(name)) for name, d in roots.items()}
+    with open(args.output, "w") as f:
+        json.dump(snap, f)
+    return 0
+
+
+def bound_key(key, paths):
+    h = hashlib.sha256(key.encode())
+    for name in sorted(paths):
+        h.update(("%s=%s\n" % (name, paths[name])).encode())
+    return h.hexdigest()
+
+
+def path_bytes(paths):
+    """The paths, longest first, as bytes"""
+    return sorted(((p.encode(), n) for n, p in paths.items()), key=lambda x: -len(x[0]))
+
+
+def contains_paths(data, paths):
+    return any(p in data for p, _ in path_bytes(paths))
+
+
+def names_in(data, paths):
+    """The names of the paths the data contains, found as relocate()
+    replaces them: longest first"""
+    names = set()
+    for p, name in path_bytes(paths):
+        if p in data:
+            names.add(name)
+            data = data.replace(p, b"\0")
+    return names
+
+
+def relocate(data, old, new):
+    """Replace the paths of the build that stored an entry by the local
+    ones, longest first, through names, so that a replaced path is not
+    replaced again."""
+    for p, name in path_bytes(old):
+        data = data.replace(p, ("\0@%s@\0" % name).encode())
+    for name, p in new.items():
+        data = data.replace(("\0@%s@\0" % name).encode(), p.encode())
+    return data
+
+
+def changes(args):
+    """The added or changed entries of each root, and the removed ones"""
+    roots, exclude = roots_of(args)
+    with open(args.snapshot) as f:
+        before = json.load(f)
+    result = {}
+    for name, d in roots.items():
+        old = before.get(name, {})
+        new = walk(d, exclude.get(name))
+        changed = sorted(r for r, e in new.items() if old.get(r) != e)
+        removed = sorted(r for r in old if r not in new)
+        result[name] = (d, changed, removed)
+    return result
+
+
+def cmd_store(args):
+    paths = parse_pairs(args.path)
+    result = changes(args)
+    reloc = {}
+    used = set()
+    bound = False
+    for name, (d, changed, removed) in result.items():
+        reloc[name] = []
+        for r in changed:
+            p = os.path.join(d, r)
+            if os.path.islink(p):
+                link = os.readlink(p).encode()
+                if contains_paths(link, paths):
+                    reloc[name].append(r)
+                    used |= names_in(link, paths)
+                continue
+            if not os.path.isfile(p):
+                continue
+            with open(p, "rb") as f:
+                data = f.read()
+            if contains_paths(data, paths):
+                if b"\0" in data:
+                    bound = True
+                else:
+                    reloc[name].append(r)
+                    used |= names_in(data, paths)
+
+    key = bound_key(args.key, paths) if bound else args.key
+    pkgdir = os.path.join(args.cache_dir, args.name)
+    entry = os.path.join(pkgdir, key)
+
+    if os.path.isdir(entry):
+        return 0
+
+    os.makedirs(pkgdir, exist_ok=True)
+    tmp = tempfile.mkdtemp(prefix=".tmp-", dir=pkgdir)
+    try:
+        manifest = {"format": FORMAT, "name": args.name, "key": args.key,
+                    "bound": bound, "paths": paths, "used": sorted(used),
+                    "roots": {}}
+        for name, (d, changed, removed) in result.items():
+            with archive_open_write(os.path.join(tmp, name + archive_ext())) as tar:
+                for r in changed:
+                    tar.add(os.path.join(d, r), arcname=r, recursive=False)
+            manifest["roots"][name] = {"removed": removed, "relocate": reloc[name]}
+        with open(os.path.join(tmp, "manifest.json"), "w") as f:
+            json.dump(manifest, f, indent=1, sort_keys=True)
+        os.chmod(tmp, 0o755)
+        try:
+            os.rename(tmp, entry)
+        except OSError:
+            # Stored meanwhile by another build
+            pass
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return 0
+
+
+def extract_filter():
+    # Our own entries: keep modes as built (e.g. setuid)
+    return {"filter": "fully_trusted"} if hasattr(tarfile, "fully_trusted_filter") else {}
+
+
+def find_entry(args):
+    """The entry of the package, if there is one that can be restored
+    here: one whose relocated files only contain paths that this build
+    has too (e.g. not the path of a br2-external tree it does not use),
+    and whose archives this Python can read (zstd needs Python 3.14)."""
+    paths = parse_pairs(args.path)
+    for key in (args.key, bound_key(args.key, paths)):
+        entry = os.path.join(args.cache_dir, args.name, key)
+        manifest = os.path.join(entry, "manifest.json")
+        if not os.path.isfile(manifest):
+            continue
+        with open(manifest) as f:
+            used = json.load(f).get("used", [])
+        if set(used) <= set(paths) and readable(entry):
+            return entry
+    return None
+
+
+def cmd_lookup(args):
+    entry = find_entry(args)
+    if entry:
+        print(entry)
+    return 0
+
+
+def cmd_restore(args):
+    entry = find_entry(args)
+    if not entry:
+        print("ERROR: %s: no entry %s in the package cache %s, run '%s-dirclean'"
+              % (args.name, args.key, args.cache_dir, args.name), file=sys.stderr)
+        return 1
+    # Its time tells when it was last used, to clean the cache up
+    os.utime(entry)
+    roots, _ = roots_of(args)
+    paths = parse_pairs(args.path)
+    with open(os.path.join(entry, "manifest.json")) as f:
+        manifest = json.load(f)
+    for name, d in roots.items():
+        info = manifest["roots"].get(name)
+        if info is None:
+            continue
+        os.makedirs(d, exist_ok=True)
+        for r in reversed(info["removed"]):
+            p = os.path.join(d, r)
+            if os.path.isdir(p) and not os.path.islink(p):
+                if not os.listdir(p):
+                    os.rmdir(p)
+            elif os.path.lexists(p):
+                os.unlink(p)
+        with tarfile.open(archive_path(entry, name)) as tar:
+            members = tar.getmembers()
+            # Never write through a hard link to the file of another
+            # package (per-package directories)
+            for m in members:
+                p = os.path.join(d, m.name)
+                if m.isdir() or not os.path.lexists(p):
+                    continue
+                if not stat.S_ISDIR(os.lstat(p).st_mode):
+                    os.unlink(p)
+            dirs = [m for m in members if m.isdir()]
+            tar.extractall(d, members=[m for m in members if not m.isdir()], **extract_filter())
+            # Directories last, for their modes and times
+            for m in dirs:
+                p = os.path.join(d, m.name)
+                os.makedirs(p, exist_ok=True)
+                os.chmod(p, m.mode)
+                os.utime(p, (m.mtime, m.mtime))
+        for r in info["relocate"]:
+            p = os.path.join(d, r)
+            st = os.lstat(p)
+            if stat.S_ISLNK(st.st_mode):
+                target = relocate(os.readlink(p).encode(), manifest["paths"], paths)
+                os.unlink(p)
+                os.symlink(target.decode(), p)
+                continue
+            with open(p, "rb") as f:
+                data = relocate(f.read(), manifest["paths"], paths)
+            os.unlink(p)
+            with open(p, "wb") as f:
+                f.write(data)
+            os.chmod(p, stat.S_IMODE(st.st_mode))
+            os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest="cmd", required=True)
+    for name in ("snapshot", "store", "lookup", "restore"):
+        p = sub.add_parser(name)
+        p.add_argument("--root", action="append", help="NAME=DIR")
+        p.add_argument("--exclude", action="append", help="NAME=SUBDIR, left out of a root")
+        p.add_argument("--path", action="append", help="NAME=DIR, a path of the build")
+        p.add_argument("--cache-dir")
+        p.add_argument("--name")
+        p.add_argument("--key")
+        p.add_argument("--snapshot")
+        p.add_argument("--output")
+    args = parser.parse_args()
+    return {"snapshot": cmd_snapshot, "store": cmd_store,
+            "lookup": cmd_lookup, "restore": cmd_restore}[args.cmd](args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -87,11 +87,20 @@ if [ $MAKE_MAJOR -lt 3 ] || [ $MAKE_MAJOR -eq 3 -a $MAKE_MINOR -lt 81 ] ; then
 fi;
 
 # Recording how the packages are built needs sha256sum
-if grep -q ^BR2_REBUILD_CHANGED_PACKAGES=y "$BR2_CONFIG" ; then
+if grep -q -e ^BR2_REBUILD_CHANGED_PACKAGES=y -e ^BR2_PACKAGE_CACHE=y "$BR2_CONFIG" ; then
 	if ! which sha256sum > /dev/null ; then
 		echo
-		echo "You must install 'sha256sum' on your build machine, for BR2_REBUILD_CHANGED_PACKAGES"
+		echo "You must install 'sha256sum' on your build machine, for BR2_REBUILD_CHANGED_PACKAGES or BR2_PACKAGE_CACHE"
 		echo "  sha256sum is usually part of the coreutils package in your distribution"
+		exit 1;
+	fi
+fi
+
+# The package cache script needs python3 (3.7 or later)
+if grep -q ^BR2_PACKAGE_CACHE=y "$BR2_CONFIG" ; then
+	if ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 7))' > /dev/null 2>&1 ; then
+		echo
+		echo "You must install 'python3' (3.7 or later) on your build machine, for BR2_PACKAGE_CACHE"
 		exit 1;
 	fi
 fi

@@ -249,6 +249,7 @@ F:	package/mono-gtksharp3/
 F:	package/monolite/
 F:	package/openjpeg/
 F:	package/pkg-build-record.mk
+F:	package/pkg-cache.mk
 F:	package/pkg-stale.mk
 F:	package/python-can/
 F:	package/python-minimalmodbus/
@@ -268,6 +269,7 @@ F:	package/sshguard/
 F:	package/sunwait/
 F:	package/sysdig/
 F:	package/uthash/
+F:	support/scripts/package-cache
 F:	support/testing/tests/core/test_rebuild_changed_packages.py
 F:	support/testing/tests/core/test_target_reinstall.py
 

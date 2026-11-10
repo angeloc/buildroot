@@ -831,6 +831,37 @@ config BR2_REBUILD_CHANGED_PACKAGES
 	  depend on inputs that are not recorded, and then not be
 	  rebuilt when they change.
 
+config BR2_PACKAGE_CACHE
+	bool "Package cache (experimental)"
+	depends on BR2_PER_PACKAGE_DIRECTORIES
+	help
+	  Store the result of the build of each package in a cache
+	  shared by the outputs of the machine, and restore it instead
+	  of building a package built the same way.
+
+	  It needs per-package directories, so that a package only uses
+	  what the packages it depends on install.
+
+	  See the "Sharing the result of the builds of the packages"
+	  section of the manual.
+
+	  This is labeled as an experimental feature, as the result of
+	  the build of a package may depend on inputs that its key does
+	  not cover, and then be restored when it should be built.
+
+comment "Package cache needs per-package directories"
+	depends on !BR2_PER_PACKAGE_DIRECTORIES
+
+if BR2_PACKAGE_CACHE
+
+config BR2_PACKAGE_CACHE_DIR
+	string "Package cache directory"
+	default "$(HOME)/.buildroot-package-cache"
+	help
+	  Where the results of the builds of the packages are stored.
+
+endif
+
 endmenu
 
 config BR2_TIME_BITS_64

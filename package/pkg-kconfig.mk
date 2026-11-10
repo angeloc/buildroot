@@ -243,6 +243,8 @@ $$($(2)_DIR)/.kconfig_editor_%: $$($(2)_DIR)/.stamp_kconfig_fixup_done
 		$$(PKG_KCONFIG_COMMON_OPTS) $$($(2)_KCONFIG_OPTS) $$(*)
 	rm -f $$($(2)_DIR)/.stamp_{kconfig_fixup_done,configured,built}
 	rm -f $$($(2)_DIR)/.stamp_{target,staging,images}_installed
+	rm -f $$($(2)_DIR)/.stamp_cache_restored $$($(2)_DIR)/.cache_key
+	touch $$($(2)_DIR)/.stamp_cache_dirty
 	$$($(2)_FIXUP_DOT_CONFIG)
 
 # Saving back the configuration

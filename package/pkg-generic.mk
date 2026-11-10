@@ -181,24 +181,26 @@ endef
 # Retrieve the archive
 $(BUILD_DIR)/%/.stamp_downloaded:
 	@$(call step_start,download)
-	$(call prepare-per-package-directory,$($(PKG)_FINAL_DOWNLOAD_DEPENDENCIES))
-	$(foreach hook,$($(PKG)_PRE_DOWNLOAD_HOOKS),$(call $(hook))$(sep))
+	$(eval __pkg_cache_nosources :=)
+	$(if $(BR2_PACKAGE_CACHE),$(call pkg-cache-lookup,$(PKG),$(@D)))
+	$(if $(__pkg_cache_nosources),,$(call prepare-per-package-directory,$($(PKG)_FINAL_DOWNLOAD_DEPENDENCIES)))
+	$(if $(__pkg_cache_nosources),,$(foreach hook,$($(PKG)_PRE_DOWNLOAD_HOOKS),$(call $(hook))$(sep)))
 # Only show the download message if it isn't already downloaded
-	$(Q)for p in $($(PKG)_ALL_DOWNLOADS); do \
+	$(if $(__pkg_cache_nosources),,$(Q)for p in $($(PKG)_ALL_DOWNLOADS); do \
 		if test ! -e $($(PKG)_DL_DIR)/`basename $$p` ; then \
 			$(call MESSAGE,"Downloading") ; \
 			break ; \
 		fi ; \
-	done
-	$(if $($(PKG)_MAIN_DOWNLOAD), \
+	done)
+	$(if $(__pkg_cache_nosources),,$(if $($(PKG)_MAIN_DOWNLOAD), \
 		$(call DOWNLOAD, \
 			$($(PKG)_MAIN_DOWNLOAD), \
 			$(patsubst %,-p '%',$($(PKG)_DOWNLOAD_POST_PROCESS)) \
 			$(patsubst %,-P '%',$($(PKG)_DOWNLOAD_POST_PROCESS_OPTS)) \
 		) \
-	)
-	$(foreach p,$($(PKG)_ADDITIONAL_DOWNLOADS),$(call DOWNLOAD,$(p))$(sep))
-	$(foreach hook,$($(PKG)_POST_DOWNLOAD_HOOKS),$(call $(hook))$(sep))
+	))
+	$(if $(__pkg_cache_nosources),,$(foreach p,$($(PKG)_ADDITIONAL_DOWNLOADS),$(call DOWNLOAD,$(p))$(sep)))
+	$(if $(__pkg_cache_nosources),,$(foreach hook,$($(PKG)_POST_DOWNLOAD_HOOKS),$(call $(hook))$(sep)))
 	$(Q)mkdir -p $(@D)
 	@$(call step_end,download)
 	$(Q)touch $@
@@ -214,14 +216,15 @@ $(BUILD_DIR)/%/.stamp_actual_downloaded:
 # Unpack the archive
 $(BUILD_DIR)/%/.stamp_extracted:
 	@$(call step_start,extract)
-	@$(call MESSAGE,"Extracting")
-	$(call prepare-per-package-directory,$($(PKG)_FINAL_EXTRACT_DEPENDENCIES))
-	$(foreach hook,$($(PKG)_PRE_EXTRACT_HOOKS),$(call $(hook))$(sep))
+	$(eval __pkg_cache_nosources := $(call pkg-cache-nosources,$(@D)))
+	$(if $(__pkg_cache_nosources),,@$(call MESSAGE,"Extracting"))
+	$(if $(__pkg_cache_nosources),,$(call prepare-per-package-directory,$($(PKG)_FINAL_EXTRACT_DEPENDENCIES)))
+	$(if $(__pkg_cache_nosources),,$(foreach hook,$($(PKG)_PRE_EXTRACT_HOOKS),$(call $(hook))$(sep)))
 	$(Q)mkdir -p $(@D)
-	$($(PKG)_EXTRACT_CMDS)
+	$(if $(__pkg_cache_nosources),,$($(PKG)_EXTRACT_CMDS))
 # some packages have messed up permissions inside
-	$(Q)chmod -R +rw $(@D)
-	$(foreach hook,$($(PKG)_POST_EXTRACT_HOOKS),$(call $(hook))$(sep))
+	$(if $(__pkg_cache_nosources),,$(Q)chmod -R +rw $(@D))
+	$(if $(__pkg_cache_nosources),,$(foreach hook,$($(PKG)_POST_EXTRACT_HOOKS),$(call $(hook))$(sep)))
 	@$(call step_end,extract)
 	$(Q)touch $@
 
@@ -241,13 +244,14 @@ $(BUILD_DIR)/%/.stamp_rsynced:
 # Patch
 $(BUILD_DIR)/%/.stamp_patched:
 	@$(call step_start,patch)
-	@$(call MESSAGE,"Patching")
-	$(foreach hook,$($(PKG)_PRE_PATCH_HOOKS),$(call $(hook))$(sep))
-	$(foreach p,$($(PKG)_PATCH),$(APPLY_PATCHES) $(@D) $($(PKG)_DL_DIR) $(notdir $(p))$(sep))
-	$(foreach dir,$(call pkg-patches-dirs,$(PKG)),\
+	$(eval __pkg_cache_nosources := $(call pkg-cache-nosources,$(@D)))
+	$(if $(__pkg_cache_nosources),,@$(call MESSAGE,"Patching"))
+	$(if $(__pkg_cache_nosources),,$(foreach hook,$($(PKG)_PRE_PATCH_HOOKS),$(call $(hook))$(sep)))
+	$(if $(__pkg_cache_nosources),,$(foreach p,$($(PKG)_PATCH),$(APPLY_PATCHES) $(@D) $($(PKG)_DL_DIR) $(notdir $(p))$(sep)))
+	$(if $(__pkg_cache_nosources),,$(foreach dir,$(call pkg-patches-dirs,$(PKG)),\
 		$(Q)$(APPLY_PATCHES) $(@D) $(dir) \*.patch$(sep)\
-	)
-	$(foreach hook,$($(PKG)_POST_PATCH_HOOKS),$(call $(hook))$(sep))
+	))
+	$(if $(__pkg_cache_nosources),,$(foreach hook,$($(PKG)_POST_PATCH_HOOKS),$(call $(hook))$(sep)))
 	@$(call step_end,patch)
 	$(Q)touch $@
 
@@ -267,9 +271,12 @@ $(BUILD_DIR)/%/.stamp_configured:
 	@$(call pkg_size_before,$(STAGING_DIR),-staging)
 	$(if $(filter YES,$($(PKG)_INSTALL_IMAGES)),@$(call pkg_size_before,$(BINARIES_DIR),-images))
 	@$(call pkg_size_before,$(HOST_DIR),-host)
-	$(foreach hook,$($(PKG)_PRE_CONFIGURE_HOOKS),$(call $(hook))$(sep))
-	$($(PKG)_CONFIGURE_CMDS)
-	$(foreach hook,$($(PKG)_POST_CONFIGURE_HOOKS),$(call $(hook))$(sep))
+	$(if $(filter y,$(PACKAGE_CACHE_ANY_RESTORED)),$(call pkg-cache-check-dirs,$(PKG),$(@D)))
+	$(eval __pkg_cache_restored := $(call pkg-cache-restored,$(PKG),$(@D)))
+	$(if $(BR2_PACKAGE_CACHE),$(if $(__pkg_cache_restored),,$(call pkg-cache-snapshot,$(@D))))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_PRE_CONFIGURE_HOOKS),$(call $(hook))$(sep)))
+	$(if $(__pkg_cache_restored),,$($(PKG)_CONFIGURE_CMDS))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_POST_CONFIGURE_HOOKS),$(call $(hook))$(sep)))
 	@$(call step_end,configure)
 	$(Q)touch $@
 
@@ -278,9 +285,12 @@ $(BUILD_DIR)/%/.stamp_built:
 	@$(call step_start,build)
 	@$(call MESSAGE,"Building")
 	$(if $(BR2_REBUILD_CHANGED_PACKAGES),$(call build-record-write,$(PKG),$(@D)))
-	$(foreach hook,$($(PKG)_PRE_BUILD_HOOKS),$(call $(hook))$(sep))
-	+$($(PKG)_BUILD_CMDS)
-	$(foreach hook,$($(PKG)_POST_BUILD_HOOKS),$(call $(hook))$(sep))
+	$(eval __pkg_cache_restored := $(call pkg-cache-restored,$(PKG),$(@D)))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_PRE_BUILD_HOOKS),$(call $(hook))$(sep)))
+	+$(if $(__pkg_cache_restored),,$($(PKG)_BUILD_CMDS))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_POST_BUILD_HOOKS),$(call $(hook))$(sep)))
+	$(if $(__pkg_cache_restored),$(if $(filter target,$($(PKG)_TYPE)),$\
+		$(call pkg-cache-restore,$(PKG),$(@D),host staging)))
 	@$(call step_end,build)
 	$(Q)touch $@
 
@@ -288,9 +298,11 @@ $(BUILD_DIR)/%/.stamp_built:
 $(BUILD_DIR)/%/.stamp_host_installed:
 	@$(call step_start,install-host)
 	@$(call MESSAGE,"Installing to host directory")
-	$(foreach hook,$($(PKG)_PRE_INSTALL_HOOKS),$(call $(hook))$(sep))
-	+$($(PKG)_INSTALL_CMDS)
-	$(foreach hook,$($(PKG)_POST_INSTALL_HOOKS),$(call $(hook))$(sep))
+	$(eval __pkg_cache_restored := $(call pkg-cache-restored,$(PKG),$(@D)))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_PRE_INSTALL_HOOKS),$(call $(hook))$(sep)))
+	+$(if $(__pkg_cache_restored),,$($(PKG)_INSTALL_CMDS))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_POST_INSTALL_HOOKS),$(call $(hook))$(sep)))
+	$(if $(__pkg_cache_restored),$(call pkg-cache-restore,$(PKG),$(@D),host staging target))
 	@$(call step_end,install-host)
 	$(Q)touch $@
 
@@ -317,9 +329,10 @@ $(BUILD_DIR)/%/.stamp_host_installed:
 $(BUILD_DIR)/%/.stamp_staging_installed:
 	@$(call step_start,install-staging)
 	@$(call MESSAGE,"Installing to staging directory")
-	$(foreach hook,$($(PKG)_PRE_INSTALL_STAGING_HOOKS),$(call $(hook))$(sep))
-	+$($(PKG)_INSTALL_STAGING_CMDS)
-	$(foreach hook,$($(PKG)_POST_INSTALL_STAGING_HOOKS),$(call $(hook))$(sep))
+	$(eval __pkg_cache_restored := $(call pkg-cache-restored,$(PKG),$(@D)))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_PRE_INSTALL_STAGING_HOOKS),$(call $(hook))$(sep)))
+	+$(if $(__pkg_cache_restored),,$($(PKG)_INSTALL_STAGING_CMDS))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_POST_INSTALL_STAGING_HOOKS),$(call $(hook))$(sep)))
 	$(Q)if test -n "$($(PKG)_CONFIG_SCRIPTS)" ; then \
 		$(call MESSAGE,"Fixing package configuration files") ;\
 			$(SED)  "s,$(HOST_DIR),@HOST_DIR@,g" \
@@ -369,16 +382,18 @@ $(BUILD_DIR)/%/.stamp_images_installed:
 $(BUILD_DIR)/%/.stamp_target_installed:
 	@$(call step_start,install-target)
 	@$(call MESSAGE,"Installing to target")
-	$(foreach hook,$($(PKG)_PRE_INSTALL_TARGET_HOOKS),$(call $(hook))$(sep))
-	+$($(PKG)_INSTALL_TARGET_CMDS)
-	$(if $(BR2_INIT_SYSTEMD),\
-		$($(PKG)_INSTALL_INIT_SYSTEMD))
-	$(if $(BR2_INIT_SYSV)$(BR2_INIT_BUSYBOX),\
-		$($(PKG)_INSTALL_INIT_SYSV))
-	$(if $(BR2_INIT_OPENRC), \
+	$(eval __pkg_cache_restored := $(call pkg-cache-restored,$(PKG),$(@D)))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_PRE_INSTALL_TARGET_HOOKS),$(call $(hook))$(sep)))
+	+$(if $(__pkg_cache_restored),,$($(PKG)_INSTALL_TARGET_CMDS))
+	$(if $(__pkg_cache_restored),,$(if $(BR2_INIT_SYSTEMD),\
+		$($(PKG)_INSTALL_INIT_SYSTEMD)))
+	$(if $(__pkg_cache_restored),,$(if $(BR2_INIT_SYSV)$(BR2_INIT_BUSYBOX),\
+		$($(PKG)_INSTALL_INIT_SYSV)))
+	$(if $(__pkg_cache_restored),,$(if $(BR2_INIT_OPENRC), \
 		$(or $($(PKG)_INSTALL_INIT_OPENRC), \
-			$($(PKG)_INSTALL_INIT_SYSV)))
-	$(foreach hook,$($(PKG)_POST_INSTALL_TARGET_HOOKS),$(call $(hook))$(sep))
+			$($(PKG)_INSTALL_INIT_SYSV))))
+	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_POST_INSTALL_TARGET_HOOKS),$(call $(hook))$(sep)))
+	$(if $(__pkg_cache_restored),$(call pkg-cache-restore,$(PKG),$(@D),target))
 	$(Q)if test -n "$($(PKG)_CONFIG_SCRIPTS)" ; then \
 		$(RM) -f $(addprefix $(TARGET_DIR)/usr/bin/,$($(PKG)_CONFIG_SCRIPTS)) ; \
 	fi
@@ -393,6 +408,7 @@ $(BUILD_DIR)/%/.stamp_installed:
 	$(if $(filter YES,$($(PKG)_INSTALL_IMAGES)),@$(call pkg_size_after,$(BINARIES_DIR),-images))
 	@$(call pkg_size_after,$(HOST_DIR),-host)
 	@$(call check_bin_arch)
+	$(if $(BR2_PACKAGE_CACHE),$(call pkg-cache-store,$(PKG),$(@D)))
 	$(Q)touch $@
 
 # Remove package sources
@@ -974,6 +990,11 @@ $(1)-depends:		$$($(2)_FINAL_ALL_DEPENDENCIES)
 
 $(1)-source:		$$($(2)_TARGET_SOURCE)
 $$($(2)_TARGET_SOURCE): | $$($(2)_FINAL_DOWNLOAD_DEPENDENCIES)
+ifeq ($(BR2_PACKAGE_CACHE),y)
+# Package cache: the key of a package, computed when it is downloaded,
+# needs those of the packages it is built against.
+$$($(2)_TARGET_SOURCE): | $$(addsuffix -source,$$($(2)_FINAL_DEPENDENCIES))
+endif
 
 $(1)-all-source:	$(1)-legal-source
 $(1)-legal-info:	$(1)-legal-source
@@ -1069,11 +1090,21 @@ endif
 			rm -f $$($(2)_TARGET_INSTALL_TARGET)
 			rm -f $$($(2)_TARGET_INSTALL_IMAGES)
 			rm -f $$($(2)_TARGET_INSTALL_HOST)
+# Package cache: a package installed again has no key any more, as it
+# may install something else; a restored one is removed, to be looked up
+# again.
+			rm -f $$($(2)_DIR)/.cache_key
+			if [ -e $$($(2)_DIR)/.stamp_cache_restored ]; then \
+				rm -rf $$($(2)_DIR) $(PER_PACKAGE_DIR)/$(1); \
+			fi
 
 $(1)-reinstall:		$(1)-clean-for-reinstall .WAIT $(1)
 
 $(1)-clean-for-rebuild: $(1)-clean-for-reinstall
 			rm -f $$($(2)_TARGET_BUILD)
+# Package cache: the build directory may be modified by hand, the package
+# is neither restored nor stored any more.
+			mkdir -p $$($(2)_DIR) && touch $$($(2)_DIR)/.stamp_cache_dirty
 
 $(1)-rebuild:		$(1)-clean-for-rebuild .WAIT $(1)
 
