@@ -1,0 +1,195 @@
+#!/usr/bin/env bash
+set -e
+
+help() {
+    cat <<_EOF_
+Usage: ${my_name} -c FILE -t OPTION -d DIR [-j N] [-D DIR]
+
+Time the cost and the gain of BR2_REBUILD_CHANGED_PACKAGES and
+BR2_PACKAGE_CACHE on a configuration: the configuration is built in
+four outputs, all with per-package directories, then C again:
+
+  A  without these options
+  B  with BR2_REBUILD_CHANGED_PACKAGES
+  C  with both options, and an empty package cache
+  D  with both options, and the package cache filled by C
+  E  the output of C again, after 'make clean'
+
+D is a new output: the packages with its path in a binary file (e.g.
+an absolute RPATH) are built again. E uses the path of C, so they are
+restored too.
+
+Timed: the full builds, a make with nothing to do (the cost of
+comparing the build records), and a make after OPTION is disabled
+then enabled again. Without BR2_REBUILD_CHANGED_PACKAGES (A), that make
+rebuilds nothing, so its result is wrong: only a full build gives the
+right one.
+
+The sources are downloaded first, and not timed. The results are
+printed, and kept in DIR/results.txt.
+
+Run it from the top of the Buildroot tree.
+
+Options:
+
+    -h, --help
+        Print this help.
+
+    -c FILE, --config-snippet FILE
+        The configuration to build (mandatory).
+
+    -t OPTION, --toggle OPTION
+        The option disabled then enabled again (mandatory), e.g.
+        BR2_PACKAGE_ZLIB. It must be enabled in FILE, and no other
+        option may select it.
+
+    -d DIR, --build-dir DIR
+        The directory where the outputs and the cache are made
+        (mandatory). Its content is removed first.
+
+    -j N, --jobs N
+        The number of jobs of make (default: the number of CPUs).
+
+    -D DIR, --dl-dir DIR
+        The download directory (default: BR2_DL_DIR from the
+        environment, else DIR/dl).
+_EOF_
+}
+
+main() {
+    local o O opts cfg toggle dir jobs dl base
+
+    o='hc:t:d:j:D:'
+    O='help,config-snippet:,toggle:,build-dir:,jobs:,dl-dir:'
+    opts="$(getopt -n "${my_name}" -o "${o}" -l "${O}" -- "${@}")"
+    eval set -- "${opts}"
+
+    jobs="$(nproc)"
+    while [ ${#} -gt 0 ]; do
+        case "${1}" in
+        (-h|--help)
+            help; exit 0
+            ;;
+        (-c|--config-snippet)
+            cfg="${2}"; shift 2
+            ;;
+        (-t|--toggle)
+            toggle="${2}"; shift 2
+            ;;
+        (-d|--build-dir)
+            dir="${2}"; shift 2
+            ;;
+        (-j|--jobs)
+            jobs="${2}"; shift 2
+            ;;
+        (-D|--dl-dir)
+            dl="${2}"; shift 2
+            ;;
+        (--)
+            shift; break
+            ;;
+        esac
+    done
+    if [ -z "${cfg}" ] || [ -z "${toggle}" ] || [ -z "${dir}" ]; then
+        printf "error: -c, -t and -d are mandatory\n" >&2; exit 1
+    fi
+    if [ ! -e Makefile ] || [ ! -d support/testing ]; then
+        printf "error: run it from the top of the Buildroot tree\n" >&2; exit 1
+    fi
+    cfg="$(readlink -f "${cfg}")"
+    mkdir -p "${dir}"
+    dir="$(readlink -f "${dir}")"
+    rm -rf "${dir:?}"/{a,b,c,d,cache,results.txt}
+    dl="$(readlink -f "${dl:-${BR2_DL_DIR:-${dir}/dl}}")"
+
+    base="$(cat "${cfg}")
+BR2_PER_PACKAGE_DIRECTORIES=y"
+
+    printf '%s, %s CPUs, make -j%s, python3 %s\n' "$(date -Iseconds)" "$(nproc)" "${jobs}" \
+        "$(python3 -V 2>&1 | cut -d' ' -f2)" | tee -a "${dir}/results.txt"
+
+    # The sources, downloaded once, not timed
+    configure "${dir}/a" "${base}"
+    if ! grep -qx "${toggle}=y" "${dir}/a/.config"; then
+        printf "error: %s is not enabled by %s\n" "${toggle}" "${cfg}" >&2; exit 1
+    fi
+    make -s O="${dir}/a" BR2_DL_DIR="${dl}" source > /dev/null
+
+    printf -- '-- A: without the options\n' | tee -a "${dir}/results.txt"
+    timed "A full build" "${dir}/a"
+    timed "A make, nothing to do" "${dir}/a"
+    set_option "${dir}/a" "${toggle}" n
+    timed "A ${toggle} disabled, make (rebuilds nothing)" "${dir}/a"
+
+    printf -- '-- B: BR2_REBUILD_CHANGED_PACKAGES\n' | tee -a "${dir}/results.txt"
+    configure "${dir}/b" "${base}
+BR2_REBUILD_CHANGED_PACKAGES=y"
+    timed "B full build" "${dir}/b"
+    timed "B make, nothing to do" "${dir}/b"
+    timed "B show-stale" "${dir}/b" show-stale
+    set_option "${dir}/b" "${toggle}" n
+    timed "B ${toggle} disabled, make" "${dir}/b"
+    set_option "${dir}/b" "${toggle}" y
+    timed "B ${toggle} enabled again, make" "${dir}/b"
+
+    printf -- '-- C: both options, empty package cache\n' | tee -a "${dir}/results.txt"
+    configure "${dir}/c" "${base}
+BR2_REBUILD_CHANGED_PACKAGES=y
+BR2_PACKAGE_CACHE=y
+BR2_PACKAGE_CACHE_DIR=\"${dir}/cache\""
+    timed "C full build, storing" "${dir}/c"
+    timed "C make, nothing to do" "${dir}/c"
+    set_option "${dir}/c" "${toggle}" n
+    timed "C ${toggle} disabled, make" "${dir}/c"
+    set_option "${dir}/c" "${toggle}" y
+    timed "C ${toggle} enabled again, make (restores)" "${dir}/c"
+
+    printf -- '-- D: both options, package cache filled by C\n' | tee -a "${dir}/results.txt"
+    configure "${dir}/d" "${base}
+BR2_REBUILD_CHANGED_PACKAGES=y
+BR2_PACKAGE_CACHE=y
+BR2_PACKAGE_CACHE_DIR=\"${dir}/cache\""
+    timed "D full build, restoring" "${dir}/d"
+
+    printf -- '-- E: the output of C, after make clean\n' | tee -a "${dir}/results.txt"
+    make -s O="${dir}/c" clean > /dev/null
+    timed "E full build, restoring" "${dir}/c"
+    printf 'Package cache: %s\n' "$(du -sh "${dir}/cache" | cut -f1)" | tee -a "${dir}/results.txt"
+}
+
+# $1: output, $2: configuration
+configure() {
+    mkdir -p "${1}"
+    printf '%s\n' "${2}" > "${1}/.config"
+    make -s O="${1}" BR2_DL_DIR="${dl}" olddefconfig > /dev/null
+}
+
+# $1: label, $2: output, $3...: make arguments. Print the time taken;
+# the output of make is kept in the output directory.
+timed() {
+    local label="${1}" out="${2}" start end
+    shift 2
+    start="$(date +%s.%N)"
+    make O="${out}" BR2_DL_DIR="${dl}" -j"${jobs}" "${@}" \
+        > "${out}/benchmark-$(printf '%s' "${label}" | tr -c 'A-Za-z0-9' '-').log" 2>&1
+    end="$(date +%s.%N)"
+    LC_ALL=C printf '%-50s %8.1f s\n' "${label}" "$(echo "${end} - ${start}" | bc)" \
+        | tee -a "${dir}/results.txt"
+}
+
+# $1: output, $2: option, $3: y or n. Enable or disable the option.
+set_option() {
+    if [ "${3}" = y ]; then
+        sed -i "s/^# ${2} is not set\$/${2}=y/" "${1}/.config"
+    else
+        sed -i "s/^${2}=y\$/# ${2} is not set/" "${1}/.config"
+    fi
+    make -s O="${1}" BR2_DL_DIR="${dl}" olddefconfig > /dev/null
+    if [ "${3}" = n ] && grep -qx "${2}=y" "${1}/.config"; then
+        printf "error: %s is selected by another option, it can't be disabled\n" "${2}" >&2
+        exit 1
+    fi
+}
+
+my_name="${0##*/}"
+main "${@}"

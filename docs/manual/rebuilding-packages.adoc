@@ -334,6 +334,12 @@ with the cache: the differences are appended to
 over). As most packages record the time they are built, use it with
 +BR2_REPRODUCIBLE+.
 
++utils/benchmark-rebuild-cache+ times what +BR2_REBUILD_CHANGED_PACKAGES+
+and +BR2_PACKAGE_CACHE+ cost and save on a configuration: the full
+builds, a +make+ with nothing to do, and a +make+ after an option is
+disabled then enabled again, without and with these options. See its
++--help+.
+
 [[rebuild-pkg]]
 === Understanding how to rebuild packages
 

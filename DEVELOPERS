@@ -273,6 +273,7 @@ F:	support/scripts/package-cache
 F:	support/testing/tests/core/test_package_cache.py
 F:	support/testing/tests/core/test_rebuild_changed_packages.py
 F:	support/testing/tests/core/test_target_reinstall.py
+F:	utils/benchmark-rebuild-cache
 
 N:	Andy Shevchenko <andy.shevchenko@gmail.com>
 F:	package/fb-test-app/

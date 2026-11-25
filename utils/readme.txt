@@ -2,6 +2,13 @@ This directory contains various useful scripts and tools for working
 with Buildroot. You need not add this directory in your PATH to use
 any of those tools, but you may do so if you want.
 
+benchmark-rebuild-cache
+    a script that times the cost and the gain of
+    BR2_REBUILD_CHANGED_PACKAGES and BR2_PACKAGE_CACHE on a configuration:
+    the full builds, a make with nothing to do, and a make after an option
+    is disabled then enabled again, without and with these options, and
+    with an empty then a filled package cache.
+
 brmake
     a script that can be run instead of make, that prepends the date in
     front of each line, redirects all of the build output to a file
