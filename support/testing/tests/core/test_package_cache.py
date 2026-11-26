@@ -241,12 +241,49 @@ class TestPackageCacheExternalToolchain(TestPackageCache):
         self.assertTrue(glob.glob(os.path.join(b2.builddir, "target/usr/lib/libjson-c.so*")))
 
 
+class TestPackageCacheBuildDir(TestPackageCache):
+    """The target Python packages are built against the build directory
+    of python3 (_PYTHON_PROJECT_BASE): python3 is stored with it. After
+    'make clean', python3 is restored with its build directory, and
+    python-markupsafe, enabled meanwhile and not in the cache, builds its
+    C extension against it."""
+    config = infra.basetest.BASIC_TOOLCHAIN_CONFIG + \
+        """
+        BR2_PER_PACKAGE_DIRECTORIES=y
+        BR2_PACKAGE_CACHE=y
+        BR2_PACKAGE_PYTHON3=y
+        # BR2_TARGET_ROOTFS_TAR is not set
+        """
+
+    def test_run(self):
+        self.b.build()
+        python3 = self.build_dir(self.b, "python3")
+        self.assertTrue(os.path.exists(os.path.join(python3, ".cache_builddir")))
+        manifests = glob.glob(os.path.join(self.cachedir, "python3", "*", "manifest.json"))
+        self.assertEqual(len(manifests), 1)
+        with open(manifests[0]) as f:
+            self.assertTrue(json.load(f)["roots"]["build"]["full"])
+
+        self.b.build(make_extra_opts=["clean"])
+        self.b.config += "\nBR2_PACKAGE_PYTHON_MARKUPSAFE=y\n"
+        self.b.configure()
+        self.b.build()
+        python3 = self.build_dir(self.b, "python3")
+        self.assertTrue(self.restored(self.b, "python3"))
+        self.assertTrue(os.path.exists(os.path.join(python3, "Modules", "Setup.local")))
+        self.assertTrue(os.path.exists(os.path.join(python3, "Makefile")))
+        self.assertFalse(self.restored(self.b, "python-markupsafe"))
+        self.assertTrue(glob.glob(os.path.join(self.b.builddir, "target", "usr", "lib", "python3*",
+                                               "site-packages", "markupsafe", "_speedups*.so")))
+
+
 class TestPackageCacheScript(unittest.TestCase):
     """Check support/scripts/package-cache alone: an entry whose text
     files contain a path of the build (here, of a br2-external tree) is
     only found where that path exists; it is compressed with zstd with
     Python 3.14 or later, else with gzip; it is restored with the paths
-    of the new build."""
+    of the new build. A root stored whole is emptied when restored, but
+    for its excluded entries."""
 
     def run_script(self, *args):
         return subprocess.run([PACKAGE_CACHE] + list(args), check=True,
@@ -285,3 +322,30 @@ class TestPackageCacheScript(unittest.TestCase):
                             "--path", "BASE_DIR=" + tmp, "--path", "BR2_EXTERNAL_FOO_PATH=" + ext2)
             with open(os.path.join(root2, "foo.pc")) as f:
                 self.assertEqual(f.read(), "prefix=%s/usr\n" % ext2)
+
+            # A root stored whole, without its excluded entries
+            build = os.path.join(tmp, "build")
+            os.makedirs(os.path.join(build, "sub"))
+            for name in ("Makefile", "sub/obj.o", ".stamp_built"):
+                with open(os.path.join(build, name), "w") as f:
+                    f.write(name)
+            full = ["--root", "build=" + build, "--full", "build", "--exclude", "build=.stamp_*"]
+            self.run_script("snapshot", "--root", "target=" + root, "--output", snapshot)
+            common = ["--cache-dir", cache, "--name", "bar", "--key", "k"]
+            self.run_script("store", *common, "--root", "target=" + root, *full,
+                            "--snapshot", snapshot, "--path", "BASE_DIR=" + tmp)
+            with open(os.path.join(cache, "bar", "k", "manifest.json")) as f:
+                self.assertTrue(json.load(f)["roots"]["build"]["full"])
+
+            # Restored over a build directory with other files: they are
+            # removed, but the excluded ones
+            build2 = os.path.join(tmp, "build2")
+            os.makedirs(build2)
+            for name in ("stale.c", ".stamp_extracted"):
+                with open(os.path.join(build2, name), "w") as f:
+                    f.write(name)
+            full2 = ["--root", "build=" + build2, "--full", "build", "--exclude", "build=.stamp_*"]
+            self.run_script("restore", *common, *full2, "--path", "BASE_DIR=" + tmp)
+            found = sorted(os.path.relpath(os.path.join(d, n), build2)
+                           for d, dirs, files in os.walk(build2) for n in dirs + files)
+            self.assertEqual(found, [".stamp_extracted", "Makefile", "sub", "sub/obj.o"])

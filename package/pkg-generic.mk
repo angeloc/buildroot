@@ -289,6 +289,8 @@ $(BUILD_DIR)/%/.stamp_built:
 	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_PRE_BUILD_HOOKS),$(call $(hook))$(sep)))
 	+$(if $(__pkg_cache_restored),,$($(PKG)_BUILD_CMDS))
 	$(if $(__pkg_cache_restored),,$(foreach hook,$($(PKG)_POST_BUILD_HOOKS),$(call $(hook))$(sep)))
+	$(if $(__pkg_cache_restored),$(if $(call pkg-cache-builddir,$(@D)),$\
+		$(call pkg-cache-restore-builddir,$(PKG),$(@D))))
 	$(if $(__pkg_cache_restored),$(if $(filter target,$($(PKG)_TYPE)),$\
 		$(call pkg-cache-restore,$(PKG),$(@D),host staging)))
 	@$(call step_end,build)

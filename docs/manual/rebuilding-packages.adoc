@@ -288,15 +288,20 @@ the result of their build may not be known: the packages whose sources
 are local (+FOO_SITE_METHOD = local+) or overridden
 (+FOO_OVERRIDE_SRCDIR+), or not checked with a hash; the packages
 installing or referring to images (+BINARIES_DIR+), as the packages are
-installed there in parallel; the packages whose build directory is used
-by other packages (e.g. +linux+, for the kernel modules); the packages
+installed there in parallel; the packages
 rebuilt with +make <package>-rebuild+ or +make <package>-reconfigure+,
 or configured with +make <package>-menuconfig+ (or another configuration
-editor), as their build directory may have been modified by hand. When a package
-is enabled after a package whose build directory it uses was restored,
-the build stops, asking to remove that build directory. A package is not
+editor), as their build directory may have been modified by hand. A package is not
 stored when a package it is built against was rebuilt by hand after its
 key was computed.
+
+When other packages use the build directory of a package (e.g.
++python3+: the target Python packages are built against it), that build
+directory is stored with the package, without the files of Buildroot
+(+.stamp_*+, +.cache_*+, +.files-list*+), and restored with it. When a
+package is enabled after a package whose build directory it uses was
+restored without it, the build stops, asking to remove that build
+directory.
 
 +make <package>-reinstall+ looks a restored package up again, with its
 current definitions. +make <package>-rebuild+ and +make

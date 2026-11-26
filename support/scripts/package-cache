@@ -7,7 +7,9 @@
 # host, staging and target directories (the roots): the entries (files,
 # symbolic links and directories) it added or changed, and those it
 # removed, found by comparing a snapshot taken before it is configured
-# with the state after it is installed.
+# with the state after it is installed. A root can also be stored whole
+# (e.g. the build directory of a package used by other packages): it is
+# emptied when restored, but for its excluded entries.
 #
 # An entry of the cache, <cache>/<package>/<key>, holds a tarball of the
 # added or changed entries of each root, and a manifest with the removed
@@ -23,6 +25,7 @@
 # an entry compressed with zstd: it builds the package instead.
 
 import argparse
+import fnmatch
 import hashlib
 import json
 import os
@@ -78,9 +81,30 @@ def parse_pairs(items):
     return pairs
 
 
+def parse_lists(items):
+    """NAME=VALUE items, several per name"""
+    lists = {}
+    for item in items or []:
+        name, _, value = item.partition("=")
+        if value:
+            lists.setdefault(name, []).append(value)
+    return lists
+
+
+def excluded(rel, exclude):
+    """Whether an entry is excluded: a subdirectory, or a pattern
+    matching the name of an entry at the top of the root"""
+    for x in exclude or []:
+        if rel == x or rel.startswith(x + "/"):
+            return True
+        if "/" not in rel and fnmatch.fnmatchcase(rel, x):
+            return True
+    return False
+
+
 def walk(root, exclude):
     """The entries of a root: path relative to it -> (type, mode, size,
-    mtime, inode, link target). The excluded subdirectory is left out."""
+    mtime, inode, link target). The excluded entries are left out."""
     entries = {}
     if not os.path.isdir(root):
         return entries
@@ -89,7 +113,7 @@ def walk(root, exclude):
         with os.scandir(path) as it:
             for e in it:
                 r = os.path.join(rel, e.name) if rel else e.name
-                if exclude and (r == exclude or r.startswith(exclude + "/")):
+                if excluded(r, exclude):
                     continue
                 st = e.stat(follow_symlinks=False)
                 link = os.readlink(e.path) if stat.S_ISLNK(st.st_mode) else ""
@@ -102,7 +126,7 @@ def walk(root, exclude):
 
 
 def roots_of(args):
-    return parse_pairs(args.root), parse_pairs(args.exclude)
+    return parse_pairs(args.root), parse_lists(args.exclude)
 
 
 def cmd_snapshot(args):
@@ -158,7 +182,7 @@ def changes(args):
         before = json.load(f)
     result = {}
     for name, d in roots.items():
-        old = before.get(name, {})
+        old = {} if name in (args.full or []) else before.get(name, {})
         new = walk(d, exclude.get(name))
         changed = sorted(r for r, e in new.items() if old.get(r) != e)
         removed = sorted(r for r in old if r not in new)
@@ -241,7 +265,8 @@ def cmd_store(args):
             with archive_open_write(os.path.join(tmp, name + archive_ext())) as tar:
                 for r in changed:
                     tar.add(os.path.join(d, r), arcname=r, recursive=False)
-            manifest["roots"][name] = {"removed": removed, "relocate": reloc[name]}
+            manifest["roots"][name] = {"removed": removed, "relocate": reloc[name],
+                                       "full": name in (args.full or [])}
         with open(os.path.join(tmp, "manifest.json"), "w") as f:
             json.dump(manifest, f, indent=1, sort_keys=True)
         os.chmod(tmp, 0o755)
@@ -263,6 +288,9 @@ def verify(args, entry, result, reloc, paths):
     diffs = []
     with tempfile.TemporaryDirectory() as tmp:
         for name, (d, changed, removed) in result.items():
+            # A root stored whole holds what the build made, not its result
+            if name in (args.full or []):
+                continue
             cached = manifest["roots"].get(name, {"removed": [], "relocate": []})
             root = os.path.join(tmp, name)
             os.makedirs(root)
@@ -325,7 +353,7 @@ def cmd_restore(args):
         return 1
     # Its time tells when it was last used, to clean the cache up
     os.utime(entry)
-    roots, _ = roots_of(args)
+    roots, exclude = roots_of(args)
     paths = parse_pairs(args.path)
     with open(os.path.join(entry, "manifest.json")) as f:
         manifest = json.load(f)
@@ -334,6 +362,16 @@ def cmd_restore(args):
         if info is None:
             continue
         os.makedirs(d, exist_ok=True)
+        if info.get("full"):
+            # Stored whole: empty it first, but for its excluded entries
+            with os.scandir(d) as it:
+                for e in it:
+                    if excluded(e.name, exclude.get(name)):
+                        continue
+                    if e.is_dir(follow_symlinks=False):
+                        shutil.rmtree(e.path)
+                    else:
+                        os.unlink(e.path)
         for r in reversed(info["removed"]):
             p = os.path.join(d, r)
             if os.path.isdir(p) and not os.path.islink(p):
@@ -383,7 +421,9 @@ def main():
     for name in ("snapshot", "store", "lookup", "restore"):
         p = sub.add_parser(name)
         p.add_argument("--root", action="append", help="NAME=DIR")
-        p.add_argument("--exclude", action="append", help="NAME=SUBDIR, left out of a root")
+        p.add_argument("--exclude", action="append",
+                       help="NAME=SUBDIR or NAME=PATTERN, left out of a root")
+        p.add_argument("--full", action="append", help="NAME, a root stored whole")
         p.add_argument("--path", action="append", help="NAME=DIR, a path of the build")
         p.add_argument("--cache-dir")
         p.add_argument("--name")
